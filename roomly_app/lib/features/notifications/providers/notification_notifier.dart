@@ -1,87 +1,125 @@
 import 'package:flutter/foundation.dart';
-import 'package:equatable/equatable.dart';
+import 'package:dartz/dartz.dart';
+import '../../../../core/errors/failures.dart';
 import '../../domain/entities/notification_entity.dart';
 import '../../domain/repositories/notification_repository.dart';
-import 'package:dartz/dartz.dart';
-import '../../../core/errors/failures.dart';
 
-/// State class for notification management
+/// State class for notifications feature
 class NotificationState extends Equatable {
-  final bool isLoading;
   final List<NotificationEntity> notifications;
   final int unreadCount;
-  final String? error;
+  final bool isLoading;
+  final String? errorMessage;
   final NotificationType? filterType;
+  final int currentPage;
+  final bool hasReachedMax;
 
   const NotificationState({
-    this.isLoading = false,
     this.notifications = const [],
     this.unreadCount = 0,
-    this.error,
+    this.isLoading = false,
+    this.errorMessage,
     this.filterType,
+    this.currentPage = 1,
+    this.hasReachedMax = false,
   });
 
-  @override
-  List<Object?> get props => [isLoading, notifications, unreadCount, error, filterType];
-
   NotificationState copyWith({
-    bool? isLoading,
     List<NotificationEntity>? notifications,
     int? unreadCount,
-    String? error,
+    bool? isLoading,
+    String? errorMessage,
     NotificationType? filterType,
+    int? currentPage,
+    bool? hasReachedMax,
   }) {
     return NotificationState(
-      isLoading: isLoading ?? this.isLoading,
       notifications: notifications ?? this.notifications,
       unreadCount: unreadCount ?? this.unreadCount,
-      error: error,
+      isLoading: isLoading ?? this.isLoading,
+      errorMessage: errorMessage ?? this.errorMessage,
       filterType: filterType ?? this.filterType,
+      currentPage: currentPage ?? this.currentPage,
+      hasReachedMax: hasReachedMax ?? this.hasReachedMax,
     );
   }
+
+  @override
+  List<Object?> get props => [
+        notifications,
+        unreadCount,
+        isLoading,
+        errorMessage,
+        filterType,
+        currentPage,
+        hasReachedMax,
+      ];
 }
 
-/// Notifier for managing notification state and operations
+/// Notifier for notifications functionality
 class NotificationNotifier extends ChangeNotifier {
   final NotificationRepository notificationRepository;
-
   NotificationState _state = const NotificationState();
-  NotificationState get state => _state;
 
   NotificationNotifier({required this.notificationRepository});
 
-  /// Initialize and load notifications
+  NotificationState get state => _state;
+
+  /// Initialize by loading notifications and unread count
   Future<void> initialize() async {
-    await loadNotifications();
-    await loadUnreadCount();
+    await Future.wait([
+      loadNotifications(isRefresh: true),
+      refreshUnreadCount(),
+    ]);
   }
 
-  /// Load all notifications with optional filtering
-  Future<void> loadNotifications({NotificationType? type}) async {
-    _state = _state.copyWith(isLoading: true, error: null, filterType: type);
+  /// Load notifications
+  Future<void> loadNotifications({bool isRefresh = false}) async {
+    if (isRefresh) {
+      _state = _state.copyWith(
+        isLoading: true,
+        currentPage: 1,
+        hasReachedMax: false,
+      );
+    } else if (_state.isLoading || _state.hasReachedMax) {
+      return;
+    } else {
+      _state = _state.copyWith(isLoading: true);
+    }
     notifyListeners();
 
     final result = await notificationRepository.getNotifications(
-      type: type?.name,
+      page: isRefresh ? 1 : _state.currentPage + 1,
+      limit: 20,
+      type: _state.filterType?.value,
     );
 
     result.fold(
       (failure) {
         _state = _state.copyWith(
           isLoading: false,
-          error: _mapFailureToMessage(failure),
+          errorMessage: _mapFailureToMessage(failure),
         );
-        notifyListeners();
       },
       (notifications) {
-        _state = _state.copyWith(
-          isLoading: false,
-          notifications: notifications,
-          error: null,
-        );
-        notifyListeners();
+        if (isRefresh) {
+          _state = _state.copyWith(
+            isLoading: false,
+            notifications: notifications,
+            currentPage: 1,
+            hasReachedMax: notifications.length < 20,
+          );
+        } else {
+          _state = _state.copyWith(
+            isLoading: false,
+            notifications: [..._state.notifications, ...notifications],
+            currentPage: _state.currentPage + 1,
+            hasReachedMax: notifications.length < 20,
+          );
+        }
       },
     );
+    notifyListeners();
   }
 
   /// Mark a single notification as read
@@ -90,20 +128,18 @@ class NotificationNotifier extends ChangeNotifier {
 
     result.fold(
       (failure) {
-        // Show error but don't update state
-        debugPrint('Failed to mark notification as read: ${failure.toString()}');
+        // Silently fail, UI will update on next refresh
       },
       (_) {
         // Update local state
-        _state = _state.copyWith(
-          notifications: _state.notifications.map((n) {
-            if (n.id == notificationId) {
-              return n.copyWith(isRead: true);
-            }
-            return n;
-          }).toList(),
-          unreadCount: _state.unreadCount > 0 ? _state.unreadCount - 1 : 0,
-        );
+        final updatedNotifications = _state.notifications
+            .map((n) => n.id == notificationId ? n.copyWith(isRead: true) : n)
+            .toList();
+        
+        _state = _state.copyWith(notifications: updatedNotifications);
+        if (_state.unreadCount > 0) {
+          _state = _state.copyWith(unreadCount: _state.unreadCount - 1);
+        }
         notifyListeners();
       },
     );
@@ -115,11 +151,16 @@ class NotificationNotifier extends ChangeNotifier {
 
     result.fold(
       (failure) {
-        debugPrint('Failed to mark all as read: ${failure.toString()}');
+        // Silently fail
       },
       (_) {
+        // Update local state
+        final updatedNotifications = _state.notifications
+            .map((n) => n.copyWith(isRead: true))
+            .toList();
+        
         _state = _state.copyWith(
-          notifications: _state.notifications.map((n) => n.copyWith(isRead: true)).toList(),
+          notifications: updatedNotifications,
           unreadCount: 0,
         );
         notifyListeners();
@@ -133,37 +174,27 @@ class NotificationNotifier extends ChangeNotifier {
 
     result.fold(
       (failure) {
-        debugPrint('Failed to delete notification: ${failure.toString()}');
+        // Silently fail
       },
       (_) {
-        _state = _state.copyWith(
-          notifications: _state.notifications.where((n) => n.id != notificationId).toList(),
-          unreadCount: _state.notifications.firstWhere(
-            (n) => n.id == notificationId,
-            orElse: () => const NotificationEntity(
-              id: '',
-              title: '',
-              body: '',
-              type: NotificationType.system,
-              isRead: true,
-              timestamp: DateTime.now(),
-            ),
-          ).isRead
-              ? _state.unreadCount
-              : _state.unreadCount - 1,
-        );
+        // Remove from local state
+        final updatedNotifications = _state.notifications
+            .where((n) => n.id != notificationId)
+            .toList();
+        
+        _state = _state.copyWith(notifications: updatedNotifications);
         notifyListeners();
       },
     );
   }
 
-  /// Load unread count
-  Future<void> loadUnreadCount() async {
+  /// Refresh unread count
+  Future<void> refreshUnreadCount() async {
     final result = await notificationRepository.getUnreadCount();
 
     result.fold(
       (failure) {
-        // Silently fail, keep current count
+        // Silently fail
       },
       (count) {
         _state = _state.copyWith(unreadCount: count);
@@ -172,32 +203,35 @@ class NotificationNotifier extends ChangeNotifier {
     );
   }
 
-  /// Set filter type
-  void setFilter(NotificationType? type) {
-    _state = _state.copyWith(filterType: type);
-    notifyListeners();
-    loadNotifications(type: type);
+  /// Filter by notification type
+  void filterByType(NotificationType? type) {
+    _state = _state.copyWith(
+      filterType: type,
+      currentPage: 1,
+      hasReachedMax: false,
+    );
+    loadNotifications(isRefresh: true);
   }
 
-  /// Clear error
+  /// Clear error message
   void clearError() {
-    _state = _state.copyWith(error: null);
+    _state = _state.copyWith(errorMessage: null);
     notifyListeners();
-  }
-
-  /// Refresh all data
-  Future<void> refresh() async {
-    await loadNotifications(type: _state.filterType);
-    await loadUnreadCount();
   }
 
   /// Map failure to user-friendly message
   String _mapFailureToMessage(Failure failure) {
-    if (failure is NetworkFailure) {
-      return 'Check your internet connection';
-    } else if (failure is ServerFailure) {
-      return 'Server error. Please try again';
+    switch (failure.runtimeType) {
+      case TimeoutFailure:
+        return 'Request timed out. Please try again.';
+      case NetworkFailure:
+        return 'No internet connection. Please check your network.';
+      case AuthFailure:
+        return 'Please login to continue.';
+      case ServerFailure:
+        return 'Server error. Please try again later.';
+      default:
+        return 'An unexpected error occurred.';
     }
-    return 'Something went wrong';
   }
 }
