@@ -6,6 +6,7 @@ import 'presentation/providers/auth_notifier.dart';
 import 'data/repositories/auth_repository_impl.dart';
 import 'data/repositories/payment_repository_impl.dart';
 import 'data/repositories/property_repository_impl.dart';
+import 'data/repositories/notification_repository_impl.dart';
 import 'core/network/api_client.dart';
 import 'features/auth/presentation/screens/login_screen.dart';
 import 'features/properties/presentation/screens/property_list_screen.dart';
@@ -15,6 +16,7 @@ import 'features/properties/providers/property_notifier.dart';
 import 'features/profile/presentation/screens/profile_screen.dart';
 import 'features/search/presentation/screens/search_screen.dart';
 import 'features/notifications/presentation/screens/notifications_screen.dart';
+import 'features/notifications/providers/notification_notifier.dart';
 import 'features/properties/presentation/screens/my_listings_screen.dart';
 import 'features/properties/presentation/screens/add_property_screen.dart';
 
@@ -52,6 +54,15 @@ void main() async {
         ChangeNotifierProvider<PaymentNotifier>(
           create: (context) => PaymentNotifier(
             paymentRepository: context.read<PaymentRepositoryImpl>(),
+          ),
+        ),
+        // Notification Providers
+        Provider<NotificationRepositoryImpl>(
+          create: (_) => NotificationRepositoryImpl(apiClient: apiClient),
+        ),
+        ChangeNotifierProvider<NotificationNotifier>(
+          create: (context) => NotificationNotifier(
+            notificationRepository: context.read<NotificationRepositoryImpl>(),
           ),
         ),
       ],
