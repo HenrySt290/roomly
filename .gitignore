@@ -1,75 +1,71 @@
 ```
-# Dependency directories
+# Dependencies
 vendor/
 node_modules/
 
-# Laravel specific
-bootstrap/cache/
-storage/framework/cache/data/
-storage/framework/cache/
-storage/framework/sessions/
-storage/framework/views/
-storage/framework/
-storage/logs/
-database/seeds/
-database/factories/
+# Build artifacts
+/build/
+/dist/
+/bin/
+/obj/
 
-# Environment variables
+# Logs
+*.log
+nohup.out
+
+# Environment specific
 .env
 .env.local
 .env.*
 
-# IDE files
+# IDE
 .vscode/
 .idea/
 *.swp
 *.swo
 
-# OS generated files
+# OS
 .DS_Store
 Thumbs.db
 
-# Logs
-*.log
-
-# Build outputs
-public/build/
-resources/css/app.css
-resources/js/app.js
-dist/
-build/
-
-# Composer/Packages
-composer.lock
-package-lock.json
-
 # Testing
-.phpunit.result.cache
 coverage/
 htmlcov/
-*.coverage
+.coverage
 
-# Temp files
-*.tmp
-*~
+# PHP/Laravel specific
+composer.lock
+*.php~
+.php_cs.cache
+bootstrap/cache/*
+storage/framework/cache/*
+storage/logs/*
 
-# Compiled files
+# Flutter/Dart specific
+.dart_tool/
+.packages
+.pub/
+build/
+ios/Pods/
+ios/.symlinks/
+android/.gradle/
+android/local.properties
+**/android/**/generated/
+*.g.dart
+*.freezed.dart
+*.gen.dart
+*.config.dart
+
+# Compiled Binary Files
+*.pyc
+*.class
 *.o
-*.obj
 *.exe
 *.dll
 *.so
 *.a
+*.obj
 *.out
-*.class
-*.pyc
-
-# Cache
-__pycache__/
-.mypy_cache/
-.pytest_cache/
-.coverage
-coverage.xml
 
 # Compressed files
 *.zip

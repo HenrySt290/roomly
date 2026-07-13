@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:latlong2/latlong.dart';
 import 'dart:io';
 
 import '../../../core/theme/app_colors.dart';
@@ -9,6 +10,8 @@ import '../../../core/utils/validators.dart';
 import '../../../domain/entities/property_entity.dart';
 import '../../providers/property_notifier.dart';
 import '../../widgets/common_widgets.dart';
+import '../../../location/presentation/screens/location_picker_screen.dart';
+import '../../../location/providers/location_notifier.dart';
 
 class AddPropertyScreen extends StatefulWidget {
   final PropertyEntity? initialProperty;
@@ -40,6 +43,9 @@ class _AddPropertyScreenState extends State<AddPropertyScreen> {
   bool _wifi = false;
   bool _petFriendly = false;
   
+  double? _latitude;
+  double? _longitude;
+  String? _selectedAddress;
   List<XFile> _selectedImages = [];
   bool _isSubmitting = false;
 
@@ -129,8 +135,8 @@ class _AddPropertyScreenState extends State<AddPropertyScreen> {
       genderPreference: _genderPreference,
       images: widget.initialProperty?.images ?? [], 
       ownerId: widget.initialProperty?.ownerId ?? '', 
-      latitude: widget.initialProperty?.latitude ?? 0.0,
-      longitude: widget.initialProperty?.longitude ?? 0.0,
+      latitude: _latitude ?? widget.initialProperty?.latitude ?? 0.0,
+      longitude: _longitude ?? widget.initialProperty?.longitude ?? 0.0,
       status: widget.initialProperty?.status ?? 'pending_approval',
       createdAt: widget.initialProperty?.createdAt ?? DateTime.now(),
       updatedAt: DateTime.now(),
@@ -294,6 +300,60 @@ class _AddPropertyScreenState extends State<AddPropertyScreen> {
             const SizedBox(height: 24),
 
             _buildSectionTitle('Location'),
+            // Pick location button
+            Row(
+              children: [
+                Expanded(
+                  child: OutlinedButton.icon(
+                    onPressed: () async {
+                      final result = await Navigator.push<Map<String, dynamic>>(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const LocationPickerScreen(),
+                        ),
+                      );
+                      if (result != null && mounted) {
+                        setState(() {
+                          _latitude = result['latitude'];
+                          _longitude = result['longitude'];
+                          _selectedAddress = result['address'];
+                          _addressController.text = _selectedAddress ?? '';
+                        });
+                      }
+                    },
+                    icon: const Icon(Icons.map),
+                    label: const Text('Pick on Map'),
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: AppColors.primary,
+                      side: const BorderSide(color: AppColors.primary),
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                    ),
+                  ),
+                ),
+                if (_latitude != null) ...[
+                  const SizedBox(width: 8),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                    decoration: BoxDecoration(
+                      color: AppColors.success.withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Icon(Icons.check_circle, size: 16, color: AppColors.success),
+                        const SizedBox(width: 4),
+                        const Text('Set', style: TextStyle(fontSize: 12, color: AppColors.success)),
+                      ],
+                    ),
+                  ),
+                ],
+              ],
+            ),
+            const SizedBox(height: 16),
             CommonWidgets.buildTextField(
               controller: _addressController,
               label: 'Full Address',

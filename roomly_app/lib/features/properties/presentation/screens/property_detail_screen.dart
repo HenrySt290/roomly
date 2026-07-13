@@ -6,6 +6,7 @@ import '../../providers/property_notifier.dart';
 import '../../../payment/providers/payment_notifier.dart';
 import '../widgets/common_widgets.dart';
 import '../../../payment/presentation/screens/access_pass_purchase_screen.dart';
+import '../../../location/presentation/widgets/property_location_map.dart';
 
 /// Property Detail Screen with Access Pass logic
 class PropertyDetailScreen extends StatefulWidget {
@@ -186,6 +187,13 @@ class _PropertyDetailScreenState extends State<PropertyDetailScreen> {
                             ],
                             
                             // CTA Button
+
+                            // Location Map (Only visible with active pass and if coordinates exist)
+                            if (_hasActivePass && (property.latitude != null || property.longitude != null)) ...[
+                              _buildSectionTitle('Location'),
+                              _buildLocationMap(property),
+                              const SizedBox(height: 24),
+                            ],
                             _buildCTAButton(property),
                             const SizedBox(height: 32),
                           ],
@@ -494,6 +502,63 @@ class _PropertyDetailScreenState extends State<PropertyDetailScreen> {
               child: Text(
                 'Buy Access Pass - ₹5',
                 style: AppTextStyles.buttonLarge,
+              ),
+            ),
+          ),
+        ],
+
+  /// Build Location Map Widget (Only shown with active pass)
+  Widget _buildLocationMap(dynamic property) {
+    final latitude = property.latitude ?? 0.0;
+    final longitude = property.longitude ?? 0.0;
+    
+    return Container(
+      height: 250,
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: AppColors.border),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      clipBehavior: Clip.antiAlias,
+      child: Stack(
+        children: [
+          // Map widget with property marker
+          PropertyLocationMap(
+            latitude: latitude,
+            longitude: longitude,
+            propertyTitle: property.title ?? 'Property Location',
+            isInteractive: true,
+          ),
+          // Overlay hint for access pass
+          Positioned(
+            top: 12,
+            right: 12,
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+              decoration: BoxDecoration(
+                color: AppColors.success.withOpacity(0.9),
+                borderRadius: BorderRadius.circular(20),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Icon(Icons.lock_open, size: 14, color: Colors.white),
+                  const SizedBox(width: 4),
+                  Text(
+                    'Location Unlocked',
+                    style: AppTextStyles.caption.copyWith(
+                      color: Colors.white,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ],
               ),
             ),
           ),
