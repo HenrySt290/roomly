@@ -6,6 +6,7 @@ import 'presentation/providers/auth_notifier.dart';
 import 'data/repositories/auth_repository_impl.dart';
 import 'data/repositories/payment_repository_impl.dart';
 import 'data/repositories/property_repository_impl.dart';
+import 'data/repositories/notification_repository_impl.dart';
 import 'core/network/api_client.dart';
 import 'features/auth/presentation/screens/login_screen.dart';
 import 'features/properties/presentation/screens/property_list_screen.dart';
@@ -15,8 +16,13 @@ import 'features/properties/providers/property_notifier.dart';
 import 'features/profile/presentation/screens/profile_screen.dart';
 import 'features/search/presentation/screens/search_screen.dart';
 import 'features/notifications/presentation/screens/notifications_screen.dart';
+import 'features/notifications/providers/notification_notifier.dart';
 import 'features/properties/presentation/screens/my_listings_screen.dart';
 import 'features/properties/presentation/screens/add_property_screen.dart';
+import 'features/location/providers/location_notifier.dart';
+import 'features/location/data/repositories/location_repository_impl.dart';
+import 'features/location/presentation/screens/location_picker_screen.dart';
+import 'features/location/presentation/widgets/property_map_view.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -54,6 +60,24 @@ void main() async {
             paymentRepository: context.read<PaymentRepositoryImpl>(),
           ),
         ),
+        // Notification Providers
+        Provider<NotificationRepositoryImpl>(
+          create: (_) => NotificationRepositoryImpl(apiClient: apiClient),
+        ),
+        ChangeNotifierProvider<NotificationNotifier>(
+          create: (context) => NotificationNotifier(
+            notificationRepository: context.read<NotificationRepositoryImpl>(),
+          ),
+        ),
+        // Location Providers
+        Provider<LocationRepositoryImpl>(
+          create: (_) => LocationRepositoryImpl(),
+        ),
+        ChangeNotifierProvider<LocationNotifier>(
+          create: (context) => LocationNotifier(
+            repository: context.read<LocationRepositoryImpl>(),
+          )..checkPermission(),
+        ),
       ],
       child: const RoomlyApp(),
     ),
@@ -81,6 +105,7 @@ class RoomlyApp extends StatelessWidget {
         '/notifications': (context) => const NotificationsScreen(),
         '/my-listings': (context) => const MyListingsScreen(),
         '/add-property': (context) => const AddPropertyScreen(),
+        '/pick-location': (context) => const LocationPickerScreen(),
       },
       builder: (context, child) {
         return MediaQuery(

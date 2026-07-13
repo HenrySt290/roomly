@@ -7,6 +7,7 @@ import '../../../providers/auth_notifier.dart';
 import '../../../payment/providers/payment_notifier.dart';
 import '../widgets/common_widgets.dart';
 import 'property_detail_screen.dart';
+import ../../../location/presentation/widgets/property_map_view.dart;
 import '../../../payment/presentation/screens/access_pass_purchase_screen.dart';
 
 /// Main Property List Screen with search and filters
@@ -20,6 +21,7 @@ class PropertyListScreen extends StatefulWidget {
 class _PropertyListScreenState extends State<PropertyListScreen> {
   int _selectedIndex = 0;
   final TextEditingController _searchController = TextEditingController();
+  bool _isMapView = false;
 
   @override
   void initState() {
@@ -55,39 +57,48 @@ class _PropertyListScreenState extends State<PropertyListScreen> {
           // Search Bar
           _buildSearchBar(),
           
-          // Filter Chips
-          _buildFilterChips(),
-          
-          // Property List
-          Expanded(
-            child: Consumer<PropertyNotifier>(
-              builder: (context, notifier, _) {
-                if (notifier.isLoading) {
-                  return CommonWidgets.buildLoading();
-                }
-                
-                if (notifier.properties.isEmpty) {
-                  return CommonWidgets.buildEmptyState(
-                    title: 'No Properties Found',
-                    subtitle: 'Try adjusting your search or filters',
-                    icon: Icons.home_outlined,
-                    onRefresh: () => notifier.loadProperties(),
-                  );
-                }
-                
-                return RefreshIndicator(
-                  onRefresh: () => notifier.loadProperties(),
-                  child: ListView.builder(
-                    padding: const EdgeInsets.all(16),
-                    itemCount: notifier.properties.length,
-                    itemBuilder: (context, index) {
-                      final property = notifier.properties[index];
-                      return _buildPropertyCard(property);
-                    },
+          // Filter Chips + Map Toggle
+          Row(
+            children: [
+              Expanded(
+                child: SizedBox(
+                  height: 50,
+                  child: ListView(
+                    scrollDirection: Axis.horizontal,
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    children: [
+                      _buildFilterChip('All', true),
+                      _buildFilterChip('₹3k-₹5k', false),
+                      _buildFilterChip('₹5k-₹8k', false),
+                      _buildFilterChip('1 RK', false),
+                      _buildFilterChip('1 BHK', false),
+                      _buildFilterChip('2 BHK', false),
+                      _buildFilterChip('Furnished', false),
+                      _buildFilterChip('WiFi', false),
+                    ],
                   ),
-                );
-              },
-            ),
+                ),
+              ),
+              // Map/List Toggle Button
+              IconButton(
+                icon: Icon(_isMapView ? Icons.list : Icons.map),
+                tooltip: _isMapView ? 'Show List' : 'Show Map',
+                onPressed: () {
+                  setState(() {
+                    _isMapView = !_isMapView;
+                  });
+                },
+                style: IconButton.styleFrom(
+                  backgroundColor: _isMapView ? AppColors.primary : AppColors.surface,
+                  foregroundColor: _isMapView ? Colors.white : AppColors.textPrimary,
+                ),
+              ),
+            ],
+          ),
+          
+          // Property List or Map View
+          Expanded(
+            child: _isMapView ? _buildMapView() : _buildListView(),
           ),
         ],
       ),
@@ -164,6 +175,61 @@ class _PropertyListScreenState extends State<PropertyListScreen> {
           color: isSelected ? AppColors.primary : AppColors.border,
         ),
       ),
+    );
+  }
+
+  /// Build ListView with properties
+  Widget _buildListView() {
+    return Consumer<PropertyNotifier>(
+      builder: (context, notifier, _) {
+        if (notifier.isLoading) {
+          return CommonWidgets.buildLoading();
+        }
+        
+        if (notifier.properties.isEmpty) {
+          return CommonWidgets.buildEmptyState(
+            title: 'No Properties Found',
+            subtitle: 'Try adjusting your search or filters',
+            icon: Icons.home_outlined,
+            onRefresh: () => notifier.loadProperties(),
+          );
+        }
+        
+        return RefreshIndicator(
+          onRefresh: () => notifier.loadProperties(),
+          child: ListView.builder(
+            padding: const EdgeInsets.all(16),
+            itemCount: notifier.properties.length,
+            itemBuilder: (context, index) {
+              final property = notifier.properties[index];
+              return _buildPropertyCard(property);
+            },
+          ),
+        );
+      },
+    );
+  }
+
+  /// Build Map View with property markers
+  Widget _buildMapView() {
+    return Consumer<PropertyNotifier>(
+      builder: (context, notifier, _) {
+        if (notifier.isLoading) {
+          return CommonWidgets.buildLoading();
+        }
+        
+        if (notifier.properties.isEmpty) {
+          return CommonWidgets.buildEmptyState(
+            title: 'No Properties on Map',
+            subtitle: 'Try adjusting your search area',
+            icon: Icons.map_outlined,
+            onRefresh: () => notifier.loadProperties(),
+          );
+        }
+        
+        // Use the PropertyMapView widget
+        return PropertyMapView(properties: notifier.properties);
+      },
     );
   }
 

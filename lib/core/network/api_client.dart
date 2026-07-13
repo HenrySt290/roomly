@@ -1,5 +1,6 @@
 import 'package:dio/dio.dart';
 import '../constants/api_constants.dart';
+import '../utils/secure_storage_service.dart';
 
 class ApiClient {
   late final Dio _dio;
@@ -28,16 +29,49 @@ class ApiClient {
     _dio.interceptors.add(InterceptorsWrapper(
       onRequest: (options, handler) async {
         // Add auth token if available
-        // final token = await SecureStorageService.getToken();
-        // if (token != null) {
-        //   options.headers['Authorization'] = 'Bearer $token';
-        // }
+        final token = await SecureStorageService.getAuthToken();
+        if (token != null && token.isNotEmpty) {
+          options.headers['Authorization'] = 'Bearer $token';
+        }
         return handler.next(options);
       },
       onResponse: (response, handler) {
         return handler.next(response);
       },
-      onError: (error, handler) {
+      onError: (error, handler) async {
+        // Handle 401 - Token expired
+        if (error.response?.statusCode == 401) {
+          // Try to refresh token
+          final refreshToken = await SecureStorageService.getRefreshToken();
+          if (refreshToken != null) {
+            try {
+              final response = await _dio.post('/auth/refresh-token',
+                data: {'refresh_token': refreshToken},
+              );
+              final newToken = response.data['token'];
+              final newRefreshToken = response.data['refresh_token'];
+              
+              await SecureStorageService.saveAuthToken(newToken);
+              await SecureStorageService.saveRefreshToken(newRefreshToken);
+              
+              // Retry original request
+              error.requestOptions.headers['Authorization'] = 'Bearer $newToken';
+              final retryResponse = await _dio.fetch(
+                RequestOptions(
+                  path: error.requestOptions.path,
+                  method: error.requestOptions.method,
+                  data: error.requestOptions.data,
+                  queryParameters: error.requestOptions.queryParameters,
+                ),
+              );
+              return handler.resolve(retryResponse);
+            } catch (_) {
+              // Refresh failed, clear tokens
+              await SecureStorageService.clearAll();
+            }
+          }
+        }
+        
         final errorMessage = _handleError(error);
         return handler.reject(DioException(
           requestOptions: error.requestOptions,

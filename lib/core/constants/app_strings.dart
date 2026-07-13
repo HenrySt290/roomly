@@ -203,3 +203,33 @@ class AppStrings {
   static const String saved = 'Saved';
   static const String profile = 'Profile';
 }
+
+// Storage Keys and App Constants
+class AppConstants {
+  AppConstants._();
+  
+  // Storage Keys
+  static const String tokenKey = 'auth_token';
+  static const String refreshTokenKey = 'refresh_token';
+  static const String userKey = 'user_data';
+  static const String hasAccessPassKey = 'has_access_pass';
+  static const String accessPassExpiryKey = 'access_pass_expiry';
+  
+  // Pricing
+  static const double listingFee = 9.0; // ₹9
+  static const double accessPassPrice = 5.0; // ₹5
+  static const int accessPassValidityHours = 24;
+  
+  // Pagination
+  static const int defaultPageSize = 20;
+  static const int maxPageSize = 100;
+  
+  // Image Upload
+  static const int maxImageSizeMB = 5;
+  static const int maxImagesPerListing = 10;
+  
+  // Validation
+  static const int minPasswordLength = 8;
+  static const int maxTitleLength = 100;
+  static const int maxDescriptionLength = 2000;
+}
