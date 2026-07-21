@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:google_fonts/google_fonts.dart';
+import 'package:skeletonizer/skeletonizer.dart';
 import 'core/theme/app_theme.dart';
 import 'core/constants/app_strings.dart';
 import 'presentation/providers/auth_notifier.dart';
@@ -95,14 +97,20 @@ class RoomlyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      title: AppStrings.appName,
-      debugShowCheckedModeBanner: false,
-      theme: AppTheme.lightTheme,
-      darkTheme: AppTheme.darkTheme,
-      themeMode: ThemeMode.light,
-      initialRoute: '/',
-      routes: {
+    return Skeletonizer(
+      enabled: true,
+      child: MaterialApp(
+        title: AppStrings.appName,
+        debugShowCheckedModeBanner: false,
+        theme: AppTheme.lightTheme.copyWith(
+          textTheme: GoogleFonts.poppinsTextTheme(),
+        ),
+        darkTheme: AppTheme.darkTheme.copyWith(
+          textTheme: GoogleFonts.poppinsTextTheme(ThemeData.dark().textTheme),
+        ),
+        themeMode: ThemeMode.light,
+        initialRoute: '/',
+        routes: {
         '/': (context) => const LoginScreen(),
         '/home': (context) => const PropertyListScreen(),
         '/access-pass': (context) => const AccessPassPurchaseScreen(),

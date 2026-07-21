@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:flutter_staggered_animations/flutter_staggered_animations.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../../providers/property_notifier.dart';
@@ -197,11 +198,16 @@ class _PropertyListScreenState extends State<PropertyListScreen> {
         
         return RefreshIndicator(
           onRefresh: () => notifier.loadProperties(),
-          child: ListView.builder(
+          child: AnimationLimiter(
+            child: ListView.builder(
+              addAutomaticKeepAlives: true,
+              addRepaintBoundaries: true,
+
             padding: const EdgeInsets.all(16),
             itemCount: notifier.properties.length,
             itemBuilder: (context, index) {
               final property = notifier.properties[index];
+            ),
               return _buildPropertyCard(property);
             },
           ),
@@ -234,14 +240,24 @@ class _PropertyListScreenState extends State<PropertyListScreen> {
   }
 
   Widget _buildPropertyCard(dynamic property) {
-    return Card(
+    return AnimationConfiguration.staggeredList(
+      position: index,
+      duration: const Duration(milliseconds: 375),
+      child: SlideAnimation(
+        verticalOffset: 50.0,
+        child: FadeInAnimation(
+          child: Card(
       margin: const EdgeInsets.only(bottom: 16),
       elevation: 2,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(16),
       ),
       clipBehavior: Clip.antiAlias,
-      child: InkWell(
+      child: Card(
+        child: InkWell(
+          ),
+        ),
+      ),
         onTap: () {
           Navigator.push(
             context,
