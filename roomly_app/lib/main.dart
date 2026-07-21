@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'core/theme/app_theme.dart';
 import 'core/constants/app_strings.dart';
 import 'presentation/providers/auth_notifier.dart';
@@ -31,7 +32,12 @@ void main() async {
   final apiClient = ApiClient();
 
   runApp(
-    MultiProvider(
+    ScreenUtilInit(
+      designSize: const Size(360, 690),
+      minTextAdapt: true,
+      splitScreenMode: true,
+      builder: (context, child) {
+        return MultiProvider(
       providers: [
         // Auth Providers
         Provider<AuthRepositoryImpl>(
@@ -113,6 +119,7 @@ class RoomlyApp extends StatelessWidget {
           child: child!,
         );
       },
-    );
+    ), // End ScreenUtilInit
+    ); // End MultiProvider
   }
 }
