@@ -9,6 +9,11 @@ import 'package:roomly/features/payment/providers/payment_notifier.dart';
 import 'package:roomly/presentation/widgets/common_widgets.dart';
 import 'package:roomly/features/payment/presentation/screens/access_pass_purchase_screen.dart';
 import 'package:roomly/features/location/presentation/widgets/property_location_map.dart';
+import 'package:roomly/features/reviews/providers/review_notifier.dart';
+import 'package:roomly/features/reviews/presentation/widgets/review_card.dart';
+import 'package:roomly/features/reviews/presentation/widgets/rating_stars.dart';
+import 'package:roomly/features/reviews/presentation/widgets/review_form.dart';
+import 'package:roomly/features/reviews/presentation/screens/review_list_screen.dart';
 
 /// Property Detail Screen with Access Pass logic
 class PropertyDetailScreen extends StatefulWidget {
@@ -47,6 +52,8 @@ class _PropertyDetailScreenState extends State<PropertyDetailScreen> {
     // Load property details
     if (mounted) {
       context.read<PropertyNotifier>().loadPropertyDetail(widget.propertyId);
+      // Load reviews for property (new review feature)
+      context.read<ReviewNotifier>().loadReviews(widget.propertyId);
     }
   }
 
@@ -228,6 +235,10 @@ class _PropertyDetailScreenState extends State<PropertyDetailScreen> {
                               _buildLocationMap(property),
                               const SizedBox(height: 24),
                             ],
+
+                            // Reviews Section (new)
+                            _buildReviewsSection(),
+                            const SizedBox(height: 24),
 
                             // CTA Button
                             _buildCTAButton(property),
@@ -595,5 +606,86 @@ class _PropertyDetailScreenState extends State<PropertyDetailScreen> {
         ],
       ),
     );
+  }
+
+  Widget _buildReviewsSection() {
+    return Consumer<ReviewNotifier>(builder: (context, reviewNotifier, _) {
+      final reviews = reviewNotifier.reviews;
+      final avg = reviewNotifier.averageRating;
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              _buildSectionTitle('Reviews (${reviews.length})'),
+              if (reviews.isNotEmpty)
+                TextButton(
+                  onPressed: () {
+                    final prop = context.read<PropertyNotifier>().selectedProperty;
+                    if (prop == null) return;
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => ReviewListScreen(
+                          propertyId: prop.id,
+                          propertyTitle: prop.title,
+                        ),
+                      ),
+                    );
+                  },
+                  child: const Text('View All'),
+                ),
+            ],
+          ),
+          if (reviews.isNotEmpty) ...[
+            Row(
+              children: [
+                RatingStars(rating: avg, size: 20),
+                const SizedBox(width: 8),
+                Text('${avg.toStringAsFixed(1)} • ${reviews.length} reviews',
+                    style: AppTextStyles.bodyMedium.copyWith(fontWeight: FontWeight.w600)),
+              ],
+            ),
+            const SizedBox(height: 12),
+            ...reviews.take(2).map((r) => ReviewCard(review: r)),
+          ] else ...[
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: AppColors.surface,
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: AppColors.border),
+              ),
+              child: Row(
+                children: [
+                  const Icon(Icons.reviews_outlined, color: AppColors.textHint),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Text('No reviews yet. Be the first to review!',
+                        style: AppTextStyles.bodyMedium.copyWith(color: AppColors.textSecondary)),
+                  ),
+                ],
+              ),
+            ),
+          ],
+          const SizedBox(height: 12),
+          SizedBox(
+            width: double.infinity,
+            child: OutlinedButton.icon(
+              onPressed: () => ReviewForm.show(context, widget.propertyId),
+              icon: const Icon(Icons.rate_review_outlined),
+              label: const Text('Write a Review'),
+              style: OutlinedButton.styleFrom(
+                padding: const EdgeInsets.symmetric(vertical: 12),
+                side: const BorderSide(color: AppColors.primary),
+                foregroundColor: AppColors.primary,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              ),
+            ),
+          ),
+        ],
+      );
+    });
   }
 }

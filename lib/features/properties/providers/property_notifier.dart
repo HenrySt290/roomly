@@ -44,6 +44,11 @@ class PropertyNotifier extends ChangeNotifier {
   /// Get current property detail
   PropertyEntity? get currentProperty => _currentProperty;
 
+  /// Alias for detail screen legacy
+  PropertyEntity? get selectedProperty => _currentProperty;
+
+  bool isFavourite(int propertyId) => _favourites.any((p) => p.id == propertyId);
+
   /// Check if loading
   bool get isLoading => _isLoading;
 

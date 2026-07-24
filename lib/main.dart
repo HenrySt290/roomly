@@ -24,7 +24,10 @@ import 'package:roomly/features/properties/providers/add_property_flow_notifier.
 import 'package:roomly/features/location/providers/location_notifier.dart';
 import 'package:roomly/features/location/data/repositories/location_repository_impl.dart';
 import 'package:roomly/features/location/presentation/screens/location_picker_screen.dart';
-import 'package:roomly/features/location/presentation/widgets/property_map_view.dart';
+import 'package:roomly/features/search/data/repositories/search_repository_impl.dart';
+import 'package:roomly/features/search/providers/search_notifier.dart';
+import 'package:roomly/data/repositories/review_repository_impl.dart';
+import 'package:roomly/features/reviews/providers/review_notifier.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -85,6 +88,24 @@ void main() async {
           create: (context) => AddPropertyFlowNotifier(
             propertyRepository: context.read<PropertyRepositoryImpl>(),
             paymentRepository: context.read<PaymentRepositoryImpl>(),
+          ),
+        ),
+        // Search Providers with refined map filter queries
+        Provider<SearchRepositoryImpl>(
+          create: (_) => SearchRepositoryImpl(apiClient: apiClient),
+        ),
+        ChangeNotifierProvider<SearchNotifier>(
+          create: (context) => SearchNotifier(
+            searchRepository: context.read<SearchRepositoryImpl>(),
+          )..initialize(),
+        ),
+        // Review Providers
+        Provider<ReviewRepositoryImpl>(
+          create: (_) => ReviewRepositoryImpl(apiClient: apiClient),
+        ),
+        ChangeNotifierProvider<ReviewNotifier>(
+          create: (context) => ReviewNotifier(
+            reviewRepository: context.read<ReviewRepositoryImpl>(),
           ),
         ),
       ],
