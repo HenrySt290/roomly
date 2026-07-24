@@ -1,11 +1,28 @@
 import 'package:equatable/equatable.dart';
 
+enum UserRole {
+  tenant('tenant'),
+  owner('owner'),
+  admin('admin'),
+  guest('guest');
+
+  final String value;
+  const UserRole(this.value);
+
+  static UserRole fromString(String value) {
+    return UserRole.values.firstWhere(
+      (e) => e.value == value,
+      orElse: () => UserRole.guest,
+    );
+  }
+}
+
 class UserEntity extends Equatable {
   final int id;
   final String name;
   final String email;
   final String? phone;
-  final String role; // 'tenant', 'owner', 'admin'
+  final UserRole role;
   final bool isEmailVerified;
   final bool isPhoneVerified;
   final String? profileImage;
@@ -31,7 +48,7 @@ class UserEntity extends Equatable {
       name: json['name'] ?? '',
       email: json['email'] ?? '',
       phone: json['phone'],
-      role: json['role'] ?? 'tenant',
+      role: UserRole.fromString(json['role'] ?? 'tenant'),
       isEmailVerified: json['is_email_verified'] ?? false,
       isPhoneVerified: json['is_phone_verified'] ?? false,
       profileImage: json['profile_image'],
@@ -46,7 +63,7 @@ class UserEntity extends Equatable {
       'name': name,
       'email': email,
       'phone': phone,
-      'role': role,
+      'role': role.value,
       'is_email_verified': isEmailVerified,
       'is_phone_verified': isPhoneVerified,
       'profile_image': profileImage,
@@ -55,9 +72,9 @@ class UserEntity extends Equatable {
     };
   }
 
-  bool get isTenant => role == 'tenant';
-  bool get isOwner => role == 'owner';
-  bool get isAdmin => role == 'admin';
+  bool get isTenant => role == UserRole.tenant;
+  bool get isOwner => role == UserRole.owner;
+  bool get isAdmin => role == UserRole.admin;
 
   @override
   List<Object?> get props => [
@@ -78,7 +95,7 @@ class UserEntity extends Equatable {
     String? name,
     String? email,
     String? phone,
-    String? role,
+    UserRole? role,
     bool? isEmailVerified,
     bool? isPhoneVerified,
     String? profileImage,

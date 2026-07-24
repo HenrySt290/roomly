@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/gesture.dart';
 import 'package:provider/provider.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../../../../core/utils/validators.dart';
+import '../../../../domain/entities/user_entity.dart';
 import '../../providers/auth_notifier.dart';
+import '../../providers/auth_provider.dart';
 import '../widgets/common_widgets.dart';
 import 'login_screen.dart';
 
@@ -31,14 +34,37 @@ class _RegisterScreenState extends State<RegisterScreen> {
   bool _agreeToTerms = false;
   UserRoleSelection _selectedRole = UserRoleSelection.tenant;
 
+  late AuthNotifier _authNotifier;
+
+  @override
+  void initState() {
+    super.initState();
+    _authNotifier = context.read<AuthNotifier>();
+    _authNotifier.addListener(_onAuthStateChanged);
+  }
+
   @override
   void dispose() {
+    _authNotifier.removeListener(_onAuthStateChanged);
     _nameController.dispose();
     _emailController.dispose();
     _phoneController.dispose();
     _passwordController.dispose();
     _confirmPasswordController.dispose();
     super.dispose();
+  }
+
+  void _onAuthStateChanged() {
+    if (!mounted) return;
+    if (_authNotifier.state is AuthAuthenticated) {
+      Navigator.pushNamedAndRemoveUntil(context, '/home', (route) => false);
+    } else if (_authNotifier.state is AuthError) {
+      final message = (_authNotifier.state as AuthError).message;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(message), backgroundColor: AppColors.error),
+      );
+      _authNotifier.clearError();
+    }
   }
 
   void _handleRegister() {
@@ -50,13 +76,12 @@ class _RegisterScreenState extends State<RegisterScreen> {
         return;
       }
 
-      final notifier = context.read<AuthNotifier>();
-      notifier.register(
+      _authNotifier.register(
         name: _nameController.text.trim(),
         email: _emailController.text.trim(),
         phone: _phoneController.text.trim(),
         password: _passwordController.text,
-        role: _selectedRole == UserRoleSelection.tenant ? 'tenant' : 'owner',
+        role: _selectedRole == UserRoleSelection.tenant ? UserRole.tenant : UserRole.owner,
       );
     }
   }
@@ -233,7 +258,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
                               style: AppTextStyles.link,
                               recognizer: TapGestureRecognizer()
                                 ..onTap = () {
-                                  // TODO: Navigate to T&C
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    const SnackBar(content: Text('Opening Terms & Conditions...')),
+                                  );
                                 },
                             ),
                             const TextSpan(text: ' and '),
@@ -242,7 +269,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
                               style: AppTextStyles.link,
                               recognizer: TapGestureRecognizer()
                                 ..onTap = () {
-                                  // TODO: Navigate to Privacy Policy
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    const SnackBar(content: Text('Opening Privacy Policy...')),
+                                  );
                                 },
                             ),
                           ],

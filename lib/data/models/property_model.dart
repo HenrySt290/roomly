@@ -3,13 +3,16 @@ import '../entities/property_entity.dart';
 /// Data model for Property
 /// Implements serialization/deserialization for API communication
 class PropertyModel extends PropertyEntity {
+  final double? rating;
+  final int reviewCount;
+
   const PropertyModel({
     required super.id,
     required super.title,
     required super.slug,
     required super.description,
     required super.rent,
-    required super.deposit,
+    required super.securityDeposit,
     required super.propertyType,
     required super.roomType,
     required super.area,
@@ -18,25 +21,27 @@ class PropertyModel extends PropertyEntity {
     required super.latitude,
     required super.longitude,
     required super.ownerId,
-    required super.status,
+    super.ownerName,
+    required super.images,
     required super.amenities,
     required super.rules,
-    required super.isAvailable,
     required super.availableFrom,
+    required super.status,
+    required super.isFurnished,
+    required super.hasAttachedBathroom,
+    required super.hasParking,
+    required super.hasWifi,
+    required super.isPetFriendly,
+    super.genderPreference,
+    required super.viewCount,
+    required super.favouriteCount,
     required super.createdAt,
-    required super.updatedAt,
-    this.images = const [],
-    this.viewCount = 0,
-    this.favouriteCount = 0,
+    super.updatedAt,
+    super.publishedAt,
+    super.occupiedAt,
     this.rating,
     this.reviewCount = 0,
   });
-
-  final List<String> images;
-  final int viewCount;
-  final int favouriteCount;
-  final double? rating;
-  final int reviewCount;
 
   /// Factory constructor from JSON (API Response)
   factory PropertyModel.fromJson(Map<String, dynamic> json) {
@@ -50,8 +55,8 @@ class PropertyModel extends PropertyEntity {
       slug: json['slug'] ?? '',
       description: json['description'] ?? '',
       rent: (json['rent'] ?? 0).toDouble(),
-      deposit: (json['deposit'] ?? 0).toDouble(),
-      propertyType: PropertyType.fromString(json['property_type'] ?? 'room'),
+      securityDeposit: (json['security_deposit'] ?? json['deposit'] ?? 0).toDouble(),
+      propertyType: PropertyType.fromString(json['property_type'] ?? 'other'),
       roomType: RoomType.fromString(json['room_type'] ?? 'single'),
       area: json['area'] ?? '',
       city: json['city'] ?? '',
@@ -59,10 +64,10 @@ class PropertyModel extends PropertyEntity {
       latitude: (json['latitude'] ?? 0.0).toDouble(),
       longitude: (json['longitude'] ?? 0.0).toDouble(),
       ownerId: json['owner_id'] ?? 0,
+      ownerName: json['owner_name'],
       status: PropertyStatus.fromString(json['status'] ?? 'draft'),
       amenities: amenitiesData.map((e) => e.toString()).toList(),
       rules: rulesData.map((e) => e.toString()).toList(),
-      isAvailable: json['is_available'] ?? true,
       availableFrom: json['available_from'] != null
           ? DateTime.parse(json['available_from'])
           : DateTime.now(),
@@ -72,9 +77,21 @@ class PropertyModel extends PropertyEntity {
       updatedAt: json['updated_at'] != null
           ? DateTime.parse(json['updated_at'])
           : DateTime.now(),
+      publishedAt: json['published_at'] != null
+          ? DateTime.parse(json['published_at'])
+          : null,
+      occupiedAt: json['occupied_at'] != null
+          ? DateTime.parse(json['occupied_at'])
+          : null,
       images: imagesData.map((e) => e.toString()).toList(),
       viewCount: json['view_count'] ?? 0,
       favouriteCount: json['favourite_count'] ?? 0,
+      isFurnished: json['is_furnished'] ?? false,
+      hasAttachedBathroom: json['has_attached_bathroom'] ?? false,
+      hasParking: json['has_parking'] ?? false,
+      hasWifi: json['has_wifi'] ?? false,
+      isPetFriendly: json['is_pet_friendly'] ?? false,
+      genderPreference: json['gender_preference'] ?? 'any',
       rating: json['rating']?.toDouble(),
       reviewCount: json['review_count'] ?? 0,
     );
@@ -88,7 +105,7 @@ class PropertyModel extends PropertyEntity {
       'slug': slug,
       'description': description,
       'rent': rent,
-      'deposit': deposit,
+      'security_deposit': securityDeposit,
       'property_type': propertyType.value,
       'room_type': roomType.value,
       'area': area,
@@ -97,16 +114,24 @@ class PropertyModel extends PropertyEntity {
       'latitude': latitude,
       'longitude': longitude,
       'owner_id': ownerId,
+      'owner_name': ownerName,
       'status': status.value,
       'amenities': amenities,
       'rules': rules,
-      'is_available': isAvailable,
       'available_from': availableFrom.toIso8601String(),
       'created_at': createdAt.toIso8601String(),
-      'updated_at': updatedAt.toIso8601String(),
+      'updated_at': updatedAt?.toIso8601String(),
+      'published_at': publishedAt?.toIso8601String(),
+      'occupied_at': occupiedAt?.toIso8601String(),
       'images': images,
       'view_count': viewCount,
       'favourite_count': favouriteCount,
+      'is_furnished': isFurnished,
+      'has_attached_bathroom': hasAttachedBathroom,
+      'has_parking': hasParking,
+      'has_wifi': hasWifi,
+      'is_pet_friendly': isPetFriendly,
+      'gender_preference': genderPreference,
       'rating': rating,
       'review_count': reviewCount,
     };
@@ -122,7 +147,7 @@ class PropertyModel extends PropertyEntity {
           ? '${description.substring(0, 100)}...'
           : description,
       rent: rent,
-      deposit: deposit,
+      securityDeposit: securityDeposit,
       propertyType: propertyType,
       roomType: roomType,
       area: area,
@@ -131,29 +156,37 @@ class PropertyModel extends PropertyEntity {
       latitude: 0.0, // Hidden
       longitude: 0.0, // Hidden
       ownerId: ownerId,
+      ownerName: null, // Hidden
       status: status,
       amenities: amenities.take(3).toList(), // Show only first 3
       rules: const [], // Hidden
-      isAvailable: isAvailable,
       availableFrom: availableFrom,
       createdAt: createdAt,
       updatedAt: updatedAt,
+      publishedAt: publishedAt,
+      occupiedAt: occupiedAt,
       images: images.take(1).toList(), // Show only thumbnail
       viewCount: viewCount,
       favouriteCount: favouriteCount,
+      isFurnished: isFurnished,
+      hasAttachedBathroom: hasAttachedBathroom,
+      hasParking: hasParking,
+      hasWifi: hasWifi,
+      isPetFriendly: isPetFriendly,
+      genderPreference: genderPreference,
       rating: rating,
       reviewCount: reviewCount,
     );
   }
 
   /// Copy with method for immutable updates
-  PropertyModel copyWith({
+  PropertyModel copyWithModel({
     int? id,
     String? title,
     String? slug,
     String? description,
     double? rent,
-    double? deposit,
+    double? securityDeposit,
     PropertyType? propertyType,
     RoomType? roomType,
     String? area,
@@ -162,13 +195,21 @@ class PropertyModel extends PropertyEntity {
     double? latitude,
     double? longitude,
     int? ownerId,
+    String? ownerName,
     PropertyStatus? status,
     List<String>? amenities,
     List<String>? rules,
-    bool? isAvailable,
+    bool? isFurnished,
+    bool? hasAttachedBathroom,
+    bool? hasParking,
+    bool? hasWifi,
+    bool? isPetFriendly,
+    String? genderPreference,
     DateTime? availableFrom,
     DateTime? createdAt,
     DateTime? updatedAt,
+    DateTime? publishedAt,
+    DateTime? occupiedAt,
     List<String>? images,
     int? viewCount,
     int? favouriteCount,
@@ -181,7 +222,7 @@ class PropertyModel extends PropertyEntity {
       slug: slug ?? this.slug,
       description: description ?? this.description,
       rent: rent ?? this.rent,
-      deposit: deposit ?? this.deposit,
+      securityDeposit: securityDeposit ?? this.securityDeposit,
       propertyType: propertyType ?? this.propertyType,
       roomType: roomType ?? this.roomType,
       area: area ?? this.area,
@@ -190,13 +231,21 @@ class PropertyModel extends PropertyEntity {
       latitude: latitude ?? this.latitude,
       longitude: longitude ?? this.longitude,
       ownerId: ownerId ?? this.ownerId,
+      ownerName: ownerName ?? this.ownerName,
       status: status ?? this.status,
       amenities: amenities ?? this.amenities,
       rules: rules ?? this.rules,
-      isAvailable: isAvailable ?? this.isAvailable,
+      isFurnished: isFurnished ?? this.isFurnished,
+      hasAttachedBathroom: hasAttachedBathroom ?? this.hasAttachedBathroom,
+      hasParking: hasParking ?? this.hasParking,
+      hasWifi: hasWifi ?? this.hasWifi,
+      isPetFriendly: isPetFriendly ?? this.isPetFriendly,
+      genderPreference: genderPreference ?? this.genderPreference,
       availableFrom: availableFrom ?? this.availableFrom,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
+      publishedAt: publishedAt ?? this.publishedAt,
+      occupiedAt: occupiedAt ?? this.occupiedAt,
       images: images ?? this.images,
       viewCount: viewCount ?? this.viewCount,
       favouriteCount: favouriteCount ?? this.favouriteCount,
