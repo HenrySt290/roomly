@@ -28,6 +28,10 @@ import 'package:roomly/features/search/data/repositories/search_repository_impl.
 import 'package:roomly/features/search/providers/search_notifier.dart';
 import 'package:roomly/data/repositories/review_repository_impl.dart';
 import 'package:roomly/features/reviews/providers/review_notifier.dart';
+import 'package:roomly/data/repositories/enquiry_repository_impl.dart';
+import 'package:roomly/features/enquiries/providers/enquiry_notifier.dart';
+import 'package:roomly/features/enquiries/presentation/screens/enquiry_list_screen.dart';
+import 'package:roomly/features/enquiries/presentation/screens/enquiry_chat_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -108,6 +112,15 @@ void main() async {
             reviewRepository: context.read<ReviewRepositoryImpl>(),
           ),
         ),
+        // Enquiry & Booking Chat Providers (production-grade)
+        Provider<EnquiryRepositoryImpl>(
+          create: (_) => EnquiryRepositoryImpl(apiClient: apiClient),
+        ),
+        ChangeNotifierProvider<EnquiryNotifier>(
+          create: (context) => EnquiryNotifier(
+            enquiryRepository: context.read<EnquiryRepositoryImpl>(),
+          )..loadAllEnquiries(),
+        ),
       ],
       child: const RoomlyApp(),
     ),
@@ -137,6 +150,9 @@ class RoomlyApp extends StatelessWidget {
         '/add-property': (context) => const AddPropertyScreen(),
         '/add-property-flow': (context) => const AddPropertyFlowScreen(),
         '/pick-location': (context) => const LocationPickerScreen(),
+        '/enquiries': (context) => const EnquiryListScreen(),
+        // enquiry chat needs args, handled via MaterialPageRoute in code, but keep placeholder
+        '/enquiry-chat': (context) => const EnquiryListScreen(),
       },
       builder: (context, child) {
         return MediaQuery(

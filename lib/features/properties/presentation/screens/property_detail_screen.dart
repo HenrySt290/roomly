@@ -14,6 +14,8 @@ import 'package:roomly/features/reviews/presentation/widgets/review_card.dart';
 import 'package:roomly/features/reviews/presentation/widgets/rating_stars.dart';
 import 'package:roomly/features/reviews/presentation/widgets/review_form.dart';
 import 'package:roomly/features/reviews/presentation/screens/review_list_screen.dart';
+import 'package:roomly/features/enquiries/providers/enquiry_notifier.dart';
+import 'package:roomly/features/enquiries/presentation/screens/enquiry_chat_screen.dart';
 
 /// Property Detail Screen with Access Pass logic
 class PropertyDetailScreen extends StatefulWidget {
@@ -62,6 +64,62 @@ class _PropertyDetailScreenState extends State<PropertyDetailScreen> {
       context,
       MaterialPageRoute(builder: (_) => const AccessPassPurchaseScreen()),
     );
+  }
+
+  Future<void> _handleChatWithOwner() async {
+    final property = context.read<PropertyNotifier>().selectedProperty;
+    if (property == null) return;
+    final enquiryNotifier = context.read<EnquiryNotifier>();
+
+    // Show dialog to enter initial message
+    final messageController = TextEditingController(text: 'Hi, I am interested in ${property.title}');
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (_) => AlertDialog(
+        title: const Text('Send Enquiry'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text('Property: ${property.title}', style: AppTextStyles.bodySmall.copyWith(color: AppColors.textSecondary)),
+            const SizedBox(height: 12),
+            TextField(
+              controller: messageController,
+              maxLines: 3,
+              decoration: InputDecoration(
+                labelText: 'Message',
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Cancel')),
+          ElevatedButton(onPressed: () => Navigator.pop(context, true), child: const Text('Send')),
+        ],
+      ),
+    );
+
+    if (confirmed != true) return;
+
+    final enquiry = await enquiryNotifier.createEnquiry(
+      propertyId: property.id,
+      message: messageController.text.trim(),
+    );
+
+    if (!mounted) return;
+
+    if (enquiry != null) {
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) => EnquiryChatScreen(enquiryId: enquiry.id, isOwnerView: false),
+        ),
+      );
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(enquiryNotifier.errorMessage ?? 'Failed to send enquiry'), backgroundColor: AppColors.error),
+      );
+    }
   }
 
   Future<void> _launchWhatsApp(String phone, String propertyTitle) async {
@@ -480,29 +538,50 @@ class _PropertyDetailScreenState extends State<PropertyDetailScreen> {
 
   Widget _buildCTAButton(dynamic property) {
     if (_hasActivePass) {
-      return Row(
+      return Column(
         children: [
-          Expanded(
-            child: OutlinedButton.icon(
-              onPressed: () => _launchWhatsApp('9876543210', property.title),
-              icon: const Icon(Icons.whatsapp, color: AppColors.success),
-              label: const Text('WhatsApp'),
-              style: OutlinedButton.styleFrom(
+          SizedBox(
+            width: double.infinity,
+            child: ElevatedButton.icon(
+              onPressed: _handleChatWithOwner,
+              icon: const Icon(Icons.chat_bubble, color: Colors.white),
+              label: const Text('Chat with Owner', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600)),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.primary,
                 padding: const EdgeInsets.symmetric(vertical: 16),
-                side: const BorderSide(color: AppColors.success, width: 2),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
               ),
             ),
           ),
-          const SizedBox(width: 16),
-          Expanded(
-            child: ElevatedButton.icon(
-              onPressed: () => _launchCall('9876543210'),
-              icon: const Icon(Icons.call),
-              label: const Text('Call Now'),
-              style: ElevatedButton.styleFrom(
-                padding: const EdgeInsets.symmetric(vertical: 16),
+          const SizedBox(height: 12),
+          Row(
+            children: [
+              Expanded(
+                child: OutlinedButton.icon(
+                  onPressed: () => _launchWhatsApp('9876543210', property.title),
+                  icon: const Icon(Icons.whatsapp, color: AppColors.success),
+                  label: const Text('WhatsApp'),
+                  style: OutlinedButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    side: const BorderSide(color: AppColors.success, width: 1.5),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  ),
+                ),
               ),
-            ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: OutlinedButton.icon(
+                  onPressed: () => _launchCall('9876543210'),
+                  icon: const Icon(Icons.call, color: AppColors.primary),
+                  label: const Text('Call'),
+                  style: OutlinedButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    side: const BorderSide(color: AppColors.primary, width: 1.5),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  ),
+                ),
+              ),
+            ],
           ),
         ],
       );
