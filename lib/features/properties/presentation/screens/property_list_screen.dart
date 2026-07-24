@@ -1,15 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../../../../core/theme/app_colors.dart';
-import '../../../../core/theme/app_text_styles.dart';
-import '../../providers/property_notifier.dart';
-import '../../../providers/auth_notifier.dart';
-import '../../../payment/providers/payment_notifier.dart';
-import '../widgets/common_widgets.dart';
-import '../widgets/property_card.dart';
-import 'property_detail_screen.dart';
-import '../../../location/presentation/widgets/property_map_view.dart';
-import '../../../payment/presentation/screens/access_pass_purchase_screen.dart';
+import 'package:roomly/core/theme/app_colors.dart';
+import 'package:roomly/core/theme/app_text_styles.dart';
+import 'package:roomly/features/properties/providers/property_notifier.dart';
+import 'package:roomly/presentation/providers/auth_notifier.dart';
+import 'package:roomly/features/payment/providers/payment_notifier.dart';
+import 'package:roomly/presentation/widgets/common_widgets.dart';
+import 'package:roomly/features/properties/presentation/widgets/property_card.dart';
+import 'package:roomly/features/properties/presentation/screens/property_detail_screen.dart';
+import 'package:roomly/features/location/presentation/widgets/property_map_view.dart';
+import 'package:roomly/features/payment/presentation/screens/access_pass_purchase_screen.dart';
 
 /// Main Property List Screen with search and filters
 class PropertyListScreen extends StatefulWidget {

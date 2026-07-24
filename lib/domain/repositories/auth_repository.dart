@@ -1,11 +1,11 @@
-import '../../core/errors/failures.dart';
-import '../entities/user_entity.dart';
+import 'package:roomly/core/errors/failures.dart';
+import 'package:roomly/domain/entities/user_entity.dart';
 import 'package:dartz/dartz.dart';
 
 /// Repository interface for authentication operations
 abstract class AuthRepository {
   /// Register a new user
-  Future<Either<Failure, UserModel>> register({
+  Future<Either<Failure, UserEntity>> register({
     required String name,
     required String email,
     required String phone,
@@ -33,7 +33,7 @@ abstract class AuthRepository {
   });
 
   /// Get current authenticated user
-  Future<Either<Failure, UserModel>> getCurrentUser();
+  Future<Either<Failure, UserEntity>> getCurrentUser();
 
   /// Verify user email
   Future<Either<Failure, bool>> verifyEmail({required String token});

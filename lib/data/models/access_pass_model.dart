@@ -1,4 +1,4 @@
-import '../entities/access_pass_entity.dart';
+import 'package:roomly/domain/entities/access_pass_entity.dart';
 
 /// Data model for Access Pass
 /// Implements serialization/deserialization for API communication

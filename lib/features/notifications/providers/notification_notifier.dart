@@ -1,8 +1,9 @@
+import 'package:equatable/equatable.dart';
 import 'package:flutter/foundation.dart';
 import 'package:dartz/dartz.dart';
-import '../../../../core/errors/failures.dart';
-import '../../domain/entities/notification_entity.dart';
-import '../../domain/repositories/notification_repository.dart';
+import 'package:roomly/core/errors/failures.dart';
+import 'package:roomly/features/notifications/domain/entities/notification_entity.dart';
+import 'package:roomly/features/notifications/domain/repositories/notification_repository.dart';
 
 /// State class for notifications feature
 class NotificationState extends Equatable {

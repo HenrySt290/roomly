@@ -1,7 +1,7 @@
-import '../../../../core/errors/failures.dart';
-import '../../../../core/services/location_service.dart';
-import '../../../../core/services/map_service.dart';
-import '../../domain/entities/location_entity.dart';
+import 'package:roomly/core/errors/failures.dart';
+import 'package:roomly/core/services/location_service.dart';
+import 'package:roomly/core/services/map_service.dart';
+import 'package:roomly/features/location/domain/entities/location_entity.dart';
 import 'package:dartz/dartz.dart';
 import 'package:latlong2/latlong.dart';
 

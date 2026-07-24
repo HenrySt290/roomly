@@ -1,7 +1,7 @@
 import 'package:dartz/dartz.dart';
-import '../../../../core/errors/failures.dart';
-import '../entities/search_filter_entity.dart';
-import '../../../domain/entities/property_entity.dart';
+import 'package:roomly/core/errors/failures.dart';
+import 'package:roomly/features/search/domain/entities/search_filter_entity.dart';
+import 'package:roomly/domain/entities/property_entity.dart';
 
 /// Repository interface for search operations
 abstract class SearchRepository {

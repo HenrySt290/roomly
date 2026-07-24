@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:latlong2/latlong.dart';
-import '../../../../core/errors/failures.dart';
-import '../../domain/entities/location_entity.dart';
-import '../../data/repositories/location_repository_impl.dart';
+import 'package:roomly/core/errors/failures.dart';
+import 'package:roomly/features/location/domain/entities/location_entity.dart';
+import 'package:roomly/features/location/data/repositories/location_repository_impl.dart';
 
 /// State class for location operations
 class LocationState {

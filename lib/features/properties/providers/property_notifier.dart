@@ -1,9 +1,9 @@
 import 'package:flutter/foundation.dart';
 import 'package:dartz/dartz.dart';
-import '../../domain/entities/property_entity.dart';
-import '../../domain/repositories/property_repository.dart';
-import '../../../core/errors/failures.dart';
-import 'property_state.dart';
+import 'package:roomly/domain/entities/property_entity.dart';
+import 'package:roomly/domain/repositories/property_repository.dart';
+import 'package:roomly/core/errors/failures.dart';
+import 'package:roomly/features/properties/providers/property_state.dart';
 
 /// Notifier for property state management
 /// Implements ChangeNotifier pattern for Provider package

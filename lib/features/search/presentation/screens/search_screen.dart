@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-import '../../../core/theme/app_colors.dart';
-import '../../../core/theme/app_text_styles.dart';
-import '../../properties/providers/property_notifier.dart';
-import '../widgets/filter_chip_widget.dart';
-import '../widgets/search_bar_widget.dart';
+import 'package:roomly/core/theme/app_colors.dart';
+import 'package:roomly/core/theme/app_text_styles.dart';
+import 'package:roomly/features/properties/providers/property_notifier.dart';
+import 'package:roomly/features/search/presentation/widgets/filter_chip_widget.dart';
+import 'package:roomly/features/search/presentation/widgets/search_bar_widget.dart';
 
 class SearchScreen extends StatefulWidget {
   const SearchScreen({Key? key}) : super(key: key);

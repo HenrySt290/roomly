@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import '../../../../core/utils/responsive_utils.dart';
-import '../../../../domain/entities/property_entity.dart';
-import 'property_card.dart';
+import 'package:roomly/core/utils/responsive_utils.dart';
+import 'package:roomly/domain/entities/property_entity.dart';
+import 'package:roomly/features/properties/presentation/widgets/property_card.dart';
 
 /// Responsive grid that adjusts columns based on screen size
 class AdaptivePropertyGrid extends StatelessWidget {

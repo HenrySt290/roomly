@@ -1,7 +1,7 @@
 import 'package:flutter/foundation.dart';
-import '../../../data/repositories/payment_repository_impl.dart';
-import '../../../domain/entities/access_pass_entity.dart';
-import '../../../core/errors/failures.dart';
+import 'package:roomly/data/repositories/payment_repository_impl.dart';
+import 'package:roomly/domain/entities/access_pass_entity.dart';
+import 'package:roomly/core/errors/failures.dart';
 
 /// Payment states for the payment flow
 abstract class PaymentState {

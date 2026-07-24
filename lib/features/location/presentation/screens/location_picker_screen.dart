@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:provider/provider.dart';
-import '../../../../core/theme/app_colors.dart';
-import '../../providers/location_notifier.dart';
+import 'package:roomly/core/theme/app_colors.dart';
+import 'package:roomly/features/location/providers/location_notifier.dart';
 
 /// Interactive map screen for owners to pick property location
 class LocationPickerScreen extends StatefulWidget {

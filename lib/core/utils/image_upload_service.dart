@@ -5,7 +5,7 @@ import 'package:flutter_image_compress/flutter_image_compress.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:http/http.dart' as http;
 import 'package:path/path.dart' as path;
-import '../config/api_config.dart';
+import 'package:roomly/core/config/api_config.dart';
 
 /// Image Upload Service
 /// Handles image picking, compression, and uploading to server

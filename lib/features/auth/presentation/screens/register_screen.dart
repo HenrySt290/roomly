@@ -1,14 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/gesture.dart';
 import 'package:provider/provider.dart';
-import '../../../../core/theme/app_colors.dart';
-import '../../../../core/theme/app_text_styles.dart';
-import '../../../../core/utils/validators.dart';
-import '../../../../domain/entities/user_entity.dart';
-import '../../providers/auth_notifier.dart';
-import '../../providers/auth_provider.dart';
-import '../widgets/common_widgets.dart';
-import 'login_screen.dart';
+import 'package:roomly/core/theme/app_colors.dart';
+import 'package:roomly/core/theme/app_text_styles.dart';
+import 'package:roomly/core/utils/validators.dart';
+import 'package:roomly/domain/entities/user_entity.dart';
+import 'package:roomly/presentation/providers/auth_notifier.dart';
+import 'package:roomly/presentation/providers/auth_provider.dart';
+import 'package:roomly/presentation/widgets/common_widgets.dart';
+import 'package:roomly/features/auth/presentation/screens/login_screen.dart';
 
 /// User Role selection enum
 enum UserRoleSelection { tenant, owner }

@@ -1,14 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-import '../../../core/theme/app_colors.dart';
-import '../../../core/theme/app_text_styles.dart';
-import '../../../domain/entities/property_entity.dart';
-import '../../providers/property_notifier.dart';
-import '../widgets/property_card.dart';
-import '../widgets/property_status_chip.dart';
-import 'add_property_screen.dart';
-import 'property_detail_screen.dart';
+import 'package:roomly/core/theme/app_colors.dart';
+import 'package:roomly/core/theme/app_text_styles.dart';
+import 'package:roomly/domain/entities/property_entity.dart';
+import 'package:roomly/features/properties/providers/property_notifier.dart';
+import 'package:roomly/features/properties/presentation/widgets/property_card.dart';
+import 'package:roomly/features/properties/presentation/widgets/property_status_chip.dart';
+import 'package:roomly/features/properties/presentation/screens/add_property_screen.dart';
+import 'package:roomly/features/properties/presentation/screens/property_detail_screen.dart';
 
 class MyListingsScreen extends StatefulWidget {
   const MyListingsScreen({super.key});

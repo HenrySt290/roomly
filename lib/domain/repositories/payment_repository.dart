@@ -1,4 +1,4 @@
-import '../../core/errors/failures.dart';
+import 'package:roomly/core/errors/failures.dart';
 import 'package:dartz/dartz.dart';
 
 /// Payment method types

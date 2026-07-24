@@ -1,4 +1,4 @@
-import '../../domain/entities/export.dart';
+import 'package:roomly/features/profile/domain/entities/export.dart';
 
 class TenantProfileModel extends TenantProfileEntity {
   const TenantProfileModel({

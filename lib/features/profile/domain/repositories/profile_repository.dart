@@ -1,6 +1,6 @@
 import 'package:dartz/dartz.dart';
-import '../../../core/errors/failures.dart';
-import '../entities/export.dart';
+import 'package:roomly/core/errors/failures.dart';
+import 'package:roomly/features/profile/domain/entities/export.dart';
 
 abstract class ProfileRepository {
   // User Profile

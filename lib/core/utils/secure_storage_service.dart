@@ -1,5 +1,5 @@
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
-import '../constants/app_strings.dart';
+import 'package:roomly/core/constants/app_strings.dart';
 
 class SecureStorageService {
   static final FlutterSecureStorage _storage = const FlutterSecureStorage(

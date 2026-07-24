@@ -1,4 +1,4 @@
-import '../entities/user_entity.dart';
+import 'package:roomly/domain/entities/user_entity.dart';
 
 /// Data model for User
 /// Implements serialization/deserialization for API communication

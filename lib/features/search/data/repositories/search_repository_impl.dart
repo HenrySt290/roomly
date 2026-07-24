@@ -1,10 +1,10 @@
 import 'package:dartz/dartz.dart';
 import 'package:dio/dio.dart';
-import '../../../../core/errors/failures.dart';
-import '../../../../core/network/api_client.dart';
-import '../entities/search_filter_entity.dart';
-import '../../data/models/property_model.dart';
-import '../repositories/search_repository.dart';
+import 'package:roomly/core/errors/failures.dart';
+import 'package:roomly/core/network/api_client.dart';
+import 'package:roomly/data/models/property_model.dart';
+import 'package:roomly/features/search/domain/entities/search_filter_entity.dart';
+import 'package:roomly/features/search/domain/repositories/search_repository.dart';
 
 /// Implementation of SearchRepository
 class SearchRepositoryImpl implements SearchRepository {
@@ -43,7 +43,7 @@ class SearchRepositoryImpl implements SearchRepository {
         }
         return Right([]);
       } else {
-        return Left(ServerFailure(response.statusCode ?? 500));
+        return Left(ServerFailure('Server error', response.statusCode ?? 500));
       }
     } on DioException catch (e) {
       if (e.type == DioExceptionType.connectionTimeout ||
@@ -61,7 +61,7 @@ class SearchRepositoryImpl implements SearchRepository {
         return Left(const NotFoundFailure('Properties not found'));
       }
       if (e.response?.statusCode != null && e.response!.statusCode! >= 500) {
-        return Left(ServerFailure(e.response!.statusCode!));
+        return Left(ServerFailure('Server error', e.response!.statusCode!));
       }
       return Left(NetworkFailure(e.message ?? 'Network error occurred'));
     } catch (e) {
@@ -91,7 +91,7 @@ class SearchRepositoryImpl implements SearchRepository {
         }
         return Right([]);
       } else {
-        return Left(ServerFailure(response.statusCode ?? 500));
+        return Left(ServerFailure('Server error', response.statusCode ?? 500));
       }
     } on DioException catch (e) {
       return Left(NetworkFailure(e.message ?? 'Failed to fetch cities'));
@@ -125,7 +125,7 @@ class SearchRepositoryImpl implements SearchRepository {
         }
         return Right([]);
       } else {
-        return Left(ServerFailure(response.statusCode ?? 500));
+        return Left(ServerFailure('Server error', response.statusCode ?? 500));
       }
     } on DioException catch (e) {
       return Left(NetworkFailure(e.message ?? 'Failed to fetch areas'));

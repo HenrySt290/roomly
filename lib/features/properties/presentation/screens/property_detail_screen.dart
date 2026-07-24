@@ -2,13 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:latlong2/latlong.dart';
-import '../../../../core/theme/app_colors.dart';
-import '../../../../core/theme/app_text_styles.dart';
-import '../../providers/property_notifier.dart';
-import '../../../payment/providers/payment_notifier.dart';
-import '../widgets/common_widgets.dart';
-import '../../../payment/presentation/screens/access_pass_purchase_screen.dart';
-import '../../../location/presentation/widgets/property_location_map.dart';
+import 'package:roomly/core/theme/app_colors.dart';
+import 'package:roomly/core/theme/app_text_styles.dart';
+import 'package:roomly/features/properties/providers/property_notifier.dart';
+import 'package:roomly/features/payment/providers/payment_notifier.dart';
+import 'package:roomly/presentation/widgets/common_widgets.dart';
+import 'package:roomly/features/payment/presentation/screens/access_pass_purchase_screen.dart';
+import 'package:roomly/features/location/presentation/widgets/property_location_map.dart';
 
 /// Property Detail Screen with Access Pass logic
 class PropertyDetailScreen extends StatefulWidget {

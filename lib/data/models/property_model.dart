@@ -1,4 +1,4 @@
-import '../entities/property_entity.dart';
+import 'package:roomly/domain/entities/property_entity.dart';
 
 /// Data model for Property
 /// Implements serialization/deserialization for API communication

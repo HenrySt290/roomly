@@ -1,8 +1,9 @@
+import 'dart:async';
 import 'package:geolocator/geolocator.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
-import '../errors/failures.dart';
+import 'package:roomly/core/errors/failures.dart';
 import 'package:dartz/dartz.dart';
 
 /// Service for handling device location and permissions

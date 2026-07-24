@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:razorpay_flutter/razorpay_flutter.dart';
 import 'package:provider/provider.dart';
-import '../../../../core/theme/app_colors.dart';
-import '../../../../core/theme/app_text_styles.dart';
-import '../../providers/payment_notifier.dart';
-import '../widgets/payment_button.dart';
+import 'package:roomly/core/theme/app_colors.dart';
+import 'package:roomly/core/theme/app_text_styles.dart';
+import 'package:roomly/features/payment/providers/payment_notifier.dart';
+import 'package:roomly/features/payment/presentation/widgets/payment_button.dart';
 
 /// Access Pass Purchase Screen
 /// Allows tenants to purchase 24-hour access pass for ₹5

@@ -1,8 +1,8 @@
-import '../../domain/entities/notification_entity.dart';
-import '../../domain/repositories/notification_repository.dart';
+import 'package:roomly/domain/entities/notification_entity.dart';
+import 'package:roomly/domain/repositories/notification_repository.dart';
 import 'package:dartz/dartz.dart';
-import '../../../core/errors/failures.dart';
-import '../../../core/network/api_client.dart';
+import 'package:roomly/core/errors/failures.dart';
+import 'package:roomly/core/network/api_client.dart';
 
 /// Implementation of NotificationRepository
 class NotificationRepositoryImpl implements NotificationRepository {
