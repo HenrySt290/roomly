@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api\V1;
 use App\Http\Controllers\Controller;
 use App\Models\Review;
 use App\Models\Property;
+use App\Models\Notification;
 use Illuminate\Http\Request;
 
 class ReviewController extends Controller
@@ -79,6 +80,21 @@ class ReviewController extends Controller
             'average_rating' => $avg,
             'total_reviews' => $count,
         ]);
+
+        // Real-time notification for owner
+        try {
+            Notification::create([
+                'user_id' => $property->owner_id,
+                'type' => 'review',
+                'category' => 'review',
+                'title' => 'New review received ⭐',
+                'message' => $user->name . ' gave ' . $request->rating . ' stars to ' . $property->title,
+                'data' => ['property_id' => $property->id, 'rating' => $request->rating, 'review_id' => $review->id],
+                'action_url' => '/properties/' . $property->id,
+                'is_read' => false,
+                'sent_at' => now(),
+            ]);
+        } catch (\Exception $e) {}
 
         return response()->json([
             'message' => 'Review submitted',

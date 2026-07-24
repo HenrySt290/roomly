@@ -7,6 +7,7 @@ import 'package:roomly/domain/entities/notification_entity.dart';
 import 'package:roomly/features/enquiries/providers/enquiry_notifier.dart';
 import 'package:roomly/features/payment/providers/payment_notifier.dart';
 import 'package:roomly/features/reviews/providers/review_notifier.dart';
+import 'package:roomly/features/properties/providers/property_notifier.dart';
 
 class NotificationOverlay extends StatelessWidget {
   final Widget child;
@@ -146,13 +147,14 @@ class _AppNotificationListenerState extends State<AppNotificationListener> {
           final enquiryNotifier = context.read<EnquiryNotifier>();
           final paymentNotifier = context.read<PaymentNotifier>();
           final reviewNotifier = context.read<ReviewNotifier>();
+          final propertyNotifier = context.read<PropertyNotifier>();
 
-          // Import here to avoid circular
           // ignore: avoid_dynamic_calls
           appManager.attachListeners(
             enquiryNotifier: enquiryNotifier,
             paymentNotifier: paymentNotifier,
             reviewNotifier: reviewNotifier,
+            propertyNotifier: propertyNotifier,
           );
         } catch (e) {
           // Providers not yet ready, will retry on next dependency change
