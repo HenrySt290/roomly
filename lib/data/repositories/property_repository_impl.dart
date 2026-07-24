@@ -1,8 +1,8 @@
-import '../../domain/entities/property_entity.dart';
-import '../../domain/repositories/property_repository.dart';
-import '../models/property_model.dart';
-import '../../core/network/api_client.dart';
-import '../../core/errors/failures.dart';
+import 'package:roomly/domain/entities/property_entity.dart';
+import 'package:roomly/domain/repositories/property_repository.dart';
+import 'package:roomly/data/models/property_model.dart';
+import 'package:roomly/core/network/api_client.dart';
+import 'package:roomly/core/errors/failures.dart';
 import 'package:dio/dio.dart';
 import 'package:dartz/dartz.dart';
 

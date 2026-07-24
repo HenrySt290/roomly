@@ -1,6 +1,6 @@
-import '../../domain/entities/notification_entity.dart';
+import 'package:roomly/domain/entities/notification_entity.dart';
 import 'package:dartz/dartz.dart';
-import '../../../core/errors/failures.dart';
+import 'package:roomly/core/errors/failures.dart';
 
 /// Repository interface for notification operations
 abstract class NotificationRepository {

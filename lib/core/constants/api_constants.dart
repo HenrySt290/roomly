@@ -37,9 +37,15 @@ class ApiConstants {
   static const String reviews = '/reviews';
   static const String reviewDetails = '/reviews/'; // + {id}
 
-  // Endpoints - Enquiries
+  // Endpoints - Enquiries & Chat (Enquiry & Booking System)
   static const String enquiries = '/enquiries';
+  static const String enquiriesReceived = '/enquiries/received';
   static const String enquiryDetails = '/enquiries/'; // + {id}
+  static const String enquiryReply = '/enquiries/'; // + {id}/reply
+  static const String enquiryRead = '/enquiries/'; // + {id}/read
+  static const String enquiryClose = '/enquiries/'; // + {id}/close
+  static const String enquiryAccept = '/enquiries/'; // + {id}/accept
+  static const String enquiryMessages = '/enquiries/'; // + {id}/messages
 
   // Endpoints - Owner
   static const String ownerProfile = '/owner/profile';

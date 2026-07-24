@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../utils/responsive_utils.dart';
+import 'package:roomly/core/utils/responsive_utils.dart';
 
 /// A responsive scaffold that adapts layout based on screen size
 class AdaptiveScaffold extends StatelessWidget {

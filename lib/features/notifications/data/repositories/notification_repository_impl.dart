@@ -1,9 +1,9 @@
 import 'package:dartz/dartz.dart';
 import 'package:dio/dio.dart';
-import '../../../../core/errors/failures.dart';
-import '../../../../core/network/api_client.dart';
-import '../entities/notification_entity.dart';
-import '../repositories/notification_repository.dart';
+import 'package:roomly/core/errors/failures.dart';
+import 'package:roomly/core/network/api_client.dart';
+import 'package:roomly/features/notifications/domain/entities/notification_entity.dart';
+import 'package:roomly/features/notifications/domain/repositories/notification_repository.dart';
 
 /// Implementation of NotificationRepository
 class NotificationRepositoryImpl implements NotificationRepository {
@@ -44,7 +44,7 @@ class NotificationRepositoryImpl implements NotificationRepository {
         }
         return Right([]);
       } else {
-        return Left(ServerFailure(response.statusCode ?? 500));
+        return Left(ServerFailure('Server error', response.statusCode ?? 500));
       }
     } on DioException catch (e) {
       if (e.type == DioExceptionType.connectionTimeout ||
@@ -62,7 +62,7 @@ class NotificationRepositoryImpl implements NotificationRepository {
         return Right([]); // No notifications is not an error
       }
       if (e.response?.statusCode != null && e.response!.statusCode! >= 500) {
-        return Left(ServerFailure(e.response!.statusCode!));
+        return Left(ServerFailure('Server error', e.response!.statusCode!));
       }
       return Left(NetworkFailure(e.message ?? 'Network error occurred'));
     } catch (e) {
@@ -80,7 +80,7 @@ class NotificationRepositoryImpl implements NotificationRepository {
       if (response.statusCode == 200 || response.statusCode == 204) {
         return const Right(true);
       } else {
-        return Left(ServerFailure(response.statusCode ?? 500));
+        return Left(ServerFailure('Server error', response.statusCode ?? 500));
       }
     } on DioException catch (e) {
       return Left(NetworkFailure(e.message ?? 'Failed to mark as read'));
@@ -97,7 +97,7 @@ class NotificationRepositoryImpl implements NotificationRepository {
       if (response.statusCode == 200 || response.statusCode == 204) {
         return const Right(true);
       } else {
-        return Left(ServerFailure(response.statusCode ?? 500));
+        return Left(ServerFailure('Server error', response.statusCode ?? 500));
       }
     } on DioException catch (e) {
       return Left(NetworkFailure(e.message ?? 'Failed to mark all as read'));
@@ -114,7 +114,7 @@ class NotificationRepositoryImpl implements NotificationRepository {
       if (response.statusCode == 200 || response.statusCode == 204) {
         return const Right(true);
       } else {
-        return Left(ServerFailure(response.statusCode ?? 500));
+        return Left(ServerFailure('Server error', response.statusCode ?? 500));
       }
     } on DioException catch (e) {
       return Left(NetworkFailure(e.message ?? 'Failed to delete notification'));

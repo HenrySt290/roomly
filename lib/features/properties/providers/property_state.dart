@@ -1,8 +1,8 @@
-import '../../domain/entities/property_entity.dart';
-import '../../domain/repositories/property_repository.dart';
+import 'package:roomly/domain/entities/property_entity.dart';
+import 'package:roomly/domain/repositories/property_repository.dart';
 import 'package:flutter/foundation.dart';
 import 'package:dartz/dartz.dart';
-import '../../../core/errors/failures.dart';
+import 'package:roomly/core/errors/failures.dart';
 import 'package:equatable/equatable.dart';
 
 /// States for property operations

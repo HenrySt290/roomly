@@ -1,8 +1,8 @@
 import 'package:flutter/foundation.dart';
 import 'package:dartz/dartz.dart';
-import '../../domain/entities/export.dart';
-import '../../domain/repositories/profile_repository.dart';
-import '../../../../core/errors/failures.dart';
+import 'package:roomly/features/profile/domain/entities/export.dart';
+import 'package:roomly/features/profile/domain/repositories/profile_repository.dart';
+import 'package:roomly/core/errors/failures.dart';
 
 enum ProfileState { initial, loading, success, error }
 

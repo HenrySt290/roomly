@@ -1,9 +1,9 @@
 import 'package:dartz/dartz.dart';
-import '../../../../core/errors/failures.dart';
-import '../../../../core/network/api_client.dart';
-import '../../domain/entities/export.dart';
-import '../../domain/repositories/profile_repository.dart';
-import '../models/export.dart';
+import 'package:roomly/core/errors/failures.dart';
+import 'package:roomly/core/network/api_client.dart';
+import 'package:roomly/features/profile/domain/entities/export.dart';
+import 'package:roomly/features/profile/domain/repositories/profile_repository.dart';
+import 'package:roomly/features/profile/data/models/export.dart';
 
 class ProfileRepositoryImpl implements ProfileRepository {
   final ApiClient apiClient;
@@ -19,7 +19,7 @@ class ProfileRepositoryImpl implements ProfileRepository {
         final data = response.data['data'];
         return Right(UserModel.fromJson(data));
       } else {
-        return Left(ServerFailure(response.statusCode ?? 500));
+        return Left(ServerFailure('Server error', response.statusCode ?? 500));
       }
     } catch (e) {
       return Left(NetworkFailure(e.toString()));
@@ -41,7 +41,7 @@ class ProfileRepositoryImpl implements ProfileRepository {
         final data = response.data['data'];
         return Right(UserModel.fromJson(data));
       } else {
-        return Left(ServerFailure(response.statusCode ?? 500));
+        return Left(ServerFailure('Server error', response.statusCode ?? 500));
       }
     } catch (e) {
       return Left(NetworkFailure(e.toString()));
@@ -62,7 +62,7 @@ class ProfileRepositoryImpl implements ProfileRepository {
       if (response.statusCode == 200) {
         return const Right(true);
       } else {
-        return Left(ServerFailure(response.statusCode ?? 500));
+        return Left(ServerFailure('Server error', response.statusCode ?? 500));
       }
     } catch (e) {
       return Left(NetworkFailure(e.toString()));
@@ -82,7 +82,7 @@ class ProfileRepositoryImpl implements ProfileRepository {
         }
         return Right(OwnerProfileModel.fromJson(data));
       } else {
-        return Left(ServerFailure(response.statusCode ?? 500));
+        return Left(ServerFailure('Server error', response.statusCode ?? 500));
       }
     } catch (e) {
       return Left(NetworkFailure(e.toString()));
@@ -104,7 +104,7 @@ class ProfileRepositoryImpl implements ProfileRepository {
         final data = response.data['data'];
         return Right(OwnerProfileModel.fromJson(data));
       } else {
-        return Left(ServerFailure(response.statusCode ?? 500));
+        return Left(ServerFailure('Server error', response.statusCode ?? 500));
       }
     } catch (e) {
       return Left(NetworkFailure(e.toString()));
@@ -124,7 +124,7 @@ class ProfileRepositoryImpl implements ProfileRepository {
         }
         return Right(TenantProfileModel.fromJson(data));
       } else {
-        return Left(ServerFailure(response.statusCode ?? 500));
+        return Left(ServerFailure('Server error', response.statusCode ?? 500));
       }
     } catch (e) {
       return Left(NetworkFailure(e.toString()));
@@ -152,7 +152,7 @@ class ProfileRepositoryImpl implements ProfileRepository {
         final data = response.data['data'];
         return Right(KycDocumentModel.fromJson(data));
       } else {
-        return Left(ServerFailure(response.statusCode ?? 500));
+        return Left(ServerFailure('Server error', response.statusCode ?? 500));
       }
     } catch (e) {
       return Left(NetworkFailure(e.toString()));
@@ -170,7 +170,7 @@ class ProfileRepositoryImpl implements ProfileRepository {
         final documents = data.map((doc) => KycDocumentModel.fromJson(doc)).toList();
         return Right(documents);
       } else {
-        return Left(ServerFailure(response.statusCode ?? 500));
+        return Left(ServerFailure('Server error', response.statusCode ?? 500));
       }
     } catch (e) {
       return Left(NetworkFailure(e.toString()));
@@ -185,7 +185,7 @@ class ProfileRepositoryImpl implements ProfileRepository {
       if (response.statusCode == 200) {
         return const Right(true);
       } else {
-        return Left(ServerFailure(response.statusCode ?? 500));
+        return Left(ServerFailure('Server error', response.statusCode ?? 500));
       }
     } catch (e) {
       return Left(NetworkFailure(e.toString()));
@@ -201,7 +201,7 @@ class ProfileRepositoryImpl implements ProfileRepository {
       if (response.statusCode == 200) {
         return Right(response.data['data'] as Map<String, dynamic>);
       } else {
-        return Left(ServerFailure(response.statusCode ?? 500));
+        return Left(ServerFailure('Server error', response.statusCode ?? 500));
       }
     } catch (e) {
       return Left(NetworkFailure(e.toString()));
@@ -217,7 +217,7 @@ class ProfileRepositoryImpl implements ProfileRepository {
       if (response.statusCode == 200) {
         return Right(response.data['data'] as Map<String, dynamic>);
       } else {
-        return Left(ServerFailure(response.statusCode ?? 500));
+        return Left(ServerFailure('Server error', response.statusCode ?? 500));
       }
     } catch (e) {
       return Left(NetworkFailure(e.toString()));

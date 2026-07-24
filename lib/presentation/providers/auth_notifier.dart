@@ -1,7 +1,8 @@
-import '../../domain/repositories/auth_repository.dart';
-import '../../domain/entities/user_entity.dart';
-import '../providers/auth_provider.dart';
 import 'package:flutter/foundation.dart';
+import 'package:roomly/domain/repositories/auth_repository.dart';
+import 'package:roomly/domain/entities/user_entity.dart';
+import 'package:roomly/data/models/user_model.dart';
+import 'package:roomly/presentation/providers/auth_provider.dart';
 
 /// Notifier for authentication state management
 /// Implements Riverpod-style state management pattern
@@ -9,7 +10,7 @@ class AuthNotifier extends ChangeNotifier {
   final AuthRepository authRepository;
 
   AuthState _state = const AuthInitial();
-  UserModel? _currentUser;
+  UserEntity? _currentUser;
 
   AuthNotifier({required this.authRepository});
 
@@ -17,7 +18,7 @@ class AuthNotifier extends ChangeNotifier {
   AuthState get state => _state;
 
   /// Get current user
-  UserModel? get currentUser => _currentUser;
+  UserEntity? get currentUser => _currentUser;
 
   /// Check if user is authenticated
   bool get isAuthenticated => _state is AuthAuthenticated;

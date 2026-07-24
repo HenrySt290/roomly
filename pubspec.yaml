@@ -10,13 +10,19 @@ dependencies:
   flutter:
     sdk: flutter
   cupertino_icons: ^1.0.6
-  # State Management
+  # State Management - clean architecture compliant (provider for ChangeNotifier, riverpod optional)
+  provider: ^6.1.1
   flutter_riverpod: ^2.4.9
   riverpod_annotation: ^2.3.3
+  # Core Clean Arch
+  equatable: ^2.0.5
+  dartz: ^0.10.1
+  either_dart: ^1.0.0
   # Networking
   dio: ^5.4.0
   retrofit: ^4.0.3
   json_annotation: ^4.8.1
+  http: ^1.2.0
   # Local Storage
   hive_flutter: ^1.1.0
   hive: ^2.2.3
@@ -44,9 +50,11 @@ dependencies:
   url_launcher: ^6.2.4
   image_picker: ^1.0.7
   path_provider: ^2.1.2
+  path: ^1.9.0
   share_plus: ^7.2.1
   connectivity_plus: ^5.0.2
   logger: ^2.0.2+1
+  flutter_image_compress: ^2.1.0
 
 dev_dependencies:
   flutter_test:

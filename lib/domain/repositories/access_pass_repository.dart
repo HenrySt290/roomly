@@ -1,5 +1,5 @@
-import '../../core/errors/failures.dart';
-import '../entities/access_pass_entity.dart';
+import 'package:roomly/core/errors/failures.dart';
+import 'package:roomly/domain/entities/access_pass_entity.dart';
 import 'package:dartz/dartz.dart';
 
 /// Repository interface for access pass operations

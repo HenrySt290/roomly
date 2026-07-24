@@ -1,6 +1,6 @@
-import '../../domain/repositories/payment_repository.dart';
-import '../../core/network/api_client.dart';
-import '../../core/errors/failures.dart';
+import 'package:roomly/domain/repositories/payment_repository.dart';
+import 'package:roomly/core/network/api_client.dart';
+import 'package:roomly/core/errors/failures.dart';
 import 'package:dio/dio.dart';
 import 'package:dartz/dartz.dart';
 

@@ -1,5 +1,5 @@
 import 'package:equatable/equatable.dart';
-import 'user_entity.dart';
+import 'package:roomly/features/profile/domain/entities/user_entity.dart';
 
 class OwnerProfileEntity extends Equatable {
   final String id;

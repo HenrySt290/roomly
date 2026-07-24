@@ -2,13 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:image_picker/image_picker.dart';
 
-import '../../../core/theme/app_colors.dart';
-import '../../../core/theme/app_text_styles.dart';
-import '../../../core/utils/validators.dart';
-import '../../../domain/entities/property_entity.dart';
-import '../../providers/property_notifier.dart';
-import '../../widgets/common_widgets.dart';
-import '../../../location/presentation/screens/location_picker_screen.dart';
+import 'package:roomly/core/theme/app_colors.dart';
+import 'package:roomly/core/theme/app_text_styles.dart';
+import 'package:roomly/core/utils/validators.dart';
+import 'package:roomly/domain/entities/property_entity.dart';
+import 'package:roomly/features/properties/providers/property_notifier.dart';
+import 'package:roomly/presentation/widgets/common_widgets.dart';
+import 'package:roomly/features/location/presentation/screens/location_picker_screen.dart';
 
 class AddPropertyScreen extends StatefulWidget {
   final PropertyEntity? initialProperty;

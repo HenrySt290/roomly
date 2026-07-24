@@ -1,15 +1,18 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../../../../core/theme/app_colors.dart';
-import '../../../../core/theme/app_text_styles.dart';
-import '../../providers/property_notifier.dart';
-import '../../../providers/auth_notifier.dart';
-import '../../../payment/providers/payment_notifier.dart';
-import '../widgets/common_widgets.dart';
-import '../widgets/property_card.dart';
-import 'property_detail_screen.dart';
-import '../../../location/presentation/widgets/property_map_view.dart';
-import '../../../payment/presentation/screens/access_pass_purchase_screen.dart';
+import 'package:roomly/core/theme/app_colors.dart';
+import 'package:roomly/core/theme/app_text_styles.dart';
+import 'package:roomly/features/properties/providers/property_notifier.dart';
+import 'package:roomly/presentation/providers/auth_notifier.dart';
+import 'package:roomly/features/payment/providers/payment_notifier.dart';
+import 'package:roomly/presentation/widgets/common_widgets.dart';
+import 'package:roomly/features/properties/presentation/widgets/property_card.dart';
+import 'package:roomly/features/properties/presentation/screens/property_detail_screen.dart';
+import 'package:roomly/features/location/presentation/widgets/property_map_view.dart';
+import 'package:roomly/features/search/presentation/widgets/search_map_view.dart';
+import 'package:roomly/features/payment/presentation/screens/access_pass_purchase_screen.dart';
+import 'package:roomly/features/notifications/presentation/widgets/notification_bell.dart';
+import 'package:roomly/features/enquiries/presentation/screens/enquiry_list_screen.dart';
 
 /// Main Property List Screen with search and filters
 class PropertyListScreen extends StatefulWidget {
@@ -46,10 +49,12 @@ class _PropertyListScreenState extends State<PropertyListScreen> {
         title: Text('Roomly', style: AppTextStyles.h4),
         actions: [
           IconButton(
-            icon: const Icon(Icons.notifications_outlined),
-            onPressed: () {
-              Navigator.pushNamed(context, '/notifications');
-            },
+            icon: const Icon(Icons.chat_bubble_outline),
+            tooltip: 'Enquiries & Chat',
+            onPressed: () => Navigator.pushNamed(context, '/enquiries'),
+          ),
+          NotificationBell(
+            onTap: () => Navigator.pushNamed(context, '/notifications'),
           ),
         ],
       ),
@@ -205,14 +210,13 @@ class _PropertyListScreenState extends State<PropertyListScreen> {
     );
   }
 
-  /// Build Map View with property markers
+  /// Build Map View with property markers - enhanced with real-time manager
   Widget _buildMapView() {
     return Consumer<PropertyNotifier>(
       builder: (context, notifier, _) {
         if (notifier.isLoading) {
           return CommonWidgets.buildLoading();
         }
-        
         if (notifier.properties.isEmpty) {
           return CommonWidgets.buildEmptyState(
             title: 'No Properties on Map',
@@ -221,10 +225,16 @@ class _PropertyListScreenState extends State<PropertyListScreen> {
             onRefresh: () => notifier.loadProperties(),
           );
         }
-        
-        // Safely map entities to JSON maps expected by PropertyMapView
-        final propertiesJson = notifier.properties.map((p) => p.toJson()).toList();
-        return PropertyMapView(properties: propertiesJson);
+        // Use SearchMapView which accepts List<PropertyEntity> directly for refined filter queries
+        return SearchMapView(
+          properties: notifier.properties,
+          onMarkerTap: (prop) {
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => PropertyDetailScreen(propertyId: prop.id)),
+            );
+          },
+        );
       },
     );
   }

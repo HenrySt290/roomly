@@ -1,5 +1,5 @@
-import '../../core/errors/failures.dart';
-import '../entities/property_entity.dart';
+import 'package:roomly/core/errors/failures.dart';
+import 'package:roomly/domain/entities/property_entity.dart';
 import 'package:dartz/dartz.dart';
 
 /// Repository interface for property operations

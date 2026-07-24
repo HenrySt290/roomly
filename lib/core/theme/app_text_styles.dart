@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'app_colors.dart';
+import 'package:roomly/core/theme/app_colors.dart';
 
 class AppTextStyles {
   AppTextStyles._();
@@ -108,4 +108,33 @@ class AppTextStyles {
     height: 1.4,
     decoration: TextDecoration.none,
   );
+
+  // Compatibility aliases for legacy screens + real-time manager
+  static TextStyle get headingSmall => h4;
+  static TextStyle get labelLarge => GoogleFonts.poppins(
+        fontSize: 14,
+        fontWeight: FontWeight.w600,
+        color: AppColors.textPrimary,
+      );
+  static TextStyle get labelSmall => GoogleFonts.poppins(
+        fontSize: 11,
+        fontWeight: FontWeight.w500,
+        color: AppColors.textSecondary,
+      );
+  static TextStyle get bodySmallMedium => bodySmall;
+  static TextStyle get bodyBold => GoogleFonts.poppins(
+        fontSize: 14,
+        fontWeight: FontWeight.bold,
+        color: AppColors.textPrimary,
+      );
+  static TextStyle get bodyLargeBold => GoogleFonts.poppins(
+        fontSize: 16,
+        fontWeight: FontWeight.bold,
+        color: AppColors.textPrimary,
+      );
+  static TextStyle get captionBold => GoogleFonts.poppins(
+        fontSize: 11,
+        fontWeight: FontWeight.bold,
+        color: AppColors.textHint,
+      );
 }

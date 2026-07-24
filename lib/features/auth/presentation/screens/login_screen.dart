@@ -1,14 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../../../../core/theme/app_colors.dart';
-import '../../../../core/theme/app_text_styles.dart';
-import '../../../../core/utils/validators.dart';
-import '../../providers/auth_notifier.dart';
-import '../../providers/auth_provider.dart';
-import '../widgets/common_widgets.dart';
-import 'register_screen.dart';
-import 'forgot_password_screen.dart';
-import '../../properties/property_list_screen.dart';
+import 'package:roomly/core/theme/app_colors.dart';
+import 'package:roomly/core/theme/app_text_styles.dart';
+import 'package:roomly/core/utils/validators.dart';
+import 'package:roomly/presentation/providers/auth_notifier.dart';
+import 'package:roomly/presentation/providers/auth_provider.dart';
+import 'package:roomly/presentation/widgets/common_widgets.dart';
+import 'package:roomly/features/auth/presentation/screens/register_screen.dart';
+import 'package:roomly/features/auth/presentation/screens/forgot_password_screen.dart';
+import 'package:roomly/features/properties/presentation/screens/property_list_screen.dart';
 
 /// Professional Login Screen with validation and state management
 class LoginScreen extends StatefulWidget {

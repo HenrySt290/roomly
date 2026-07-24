@@ -1,10 +1,27 @@
 import 'package:dio/dio.dart';
-import '../constants/api_constants.dart';
-import '../utils/secure_storage_service.dart';
+import 'package:roomly/core/constants/api_constants.dart';
+import 'package:roomly/core/utils/secure_storage_service.dart';
 
 class ApiClient {
   late final Dio _dio;
-  
+  static Dio? _legacyDio;
+
+  // For legacy code that expects ApiClient.instance to be a Dio
+  static Dio get instance {
+    _legacyDio ??= Dio(
+      BaseOptions(
+        baseUrl: ApiConstants.baseApiUrl,
+        connectTimeout: const Duration(milliseconds: ApiConstants.connectionTimeout),
+        receiveTimeout: const Duration(milliseconds: ApiConstants.receiveTimeout),
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+        },
+      ),
+    );
+    return _legacyDio!;
+  }
+
   ApiClient() {
     _dio = Dio(
       BaseOptions(
@@ -48,30 +65,36 @@ class ApiClient {
               final response = await _dio.post('/auth/refresh-token',
                 data: {'refresh_token': refreshToken},
               );
-              final newToken = response.data['token'];
+              final newToken = response.data['token'] ?? response.data['access_token'];
               final newRefreshToken = response.data['refresh_token'];
-              
-              await SecureStorageService.saveAuthToken(newToken);
-              await SecureStorageService.saveRefreshToken(newRefreshToken);
-              
+
+              if (newToken != null) {
+                await SecureStorageService.saveAuthToken(newToken);
+              }
+              if (newRefreshToken != null) {
+                await SecureStorageService.saveRefreshToken(newRefreshToken);
+              }
+
               // Retry original request
-              error.requestOptions.headers['Authorization'] = 'Bearer $newToken';
-              final retryResponse = await _dio.fetch(
-                RequestOptions(
-                  path: error.requestOptions.path,
-                  method: error.requestOptions.method,
-                  data: error.requestOptions.data,
-                  queryParameters: error.requestOptions.queryParameters,
-                ),
-              );
-              return handler.resolve(retryResponse);
+              if (newToken != null) {
+                error.requestOptions.headers['Authorization'] = 'Bearer $newToken';
+                final retryResponse = await _dio.fetch(
+                  RequestOptions(
+                    path: error.requestOptions.path,
+                    method: error.requestOptions.method,
+                    data: error.requestOptions.data,
+                    queryParameters: error.requestOptions.queryParameters,
+                  ),
+                );
+                return handler.resolve(retryResponse);
+              }
             } catch (_) {
               // Refresh failed, clear tokens
               await SecureStorageService.clearAll();
             }
           }
         }
-        
+
         final errorMessage = _handleError(error);
         return handler.reject(DioException(
           requestOptions: error.requestOptions,
@@ -118,11 +141,31 @@ class ApiClient {
     }
   }
 
+  Dio get dio => _dio;
+
+  // Legacy single token setter
   void setAuthToken(String token) {
     _dio.options.headers['Authorization'] = 'Bearer $token';
   }
 
   void clearAuthToken() {
+    _dio.options.headers.remove('Authorization');
+  }
+
+  // New contract expected by auth_repository_impl.dart (plural)
+  Future<void> setAuthTokens({
+    required String accessToken,
+    String? refreshToken,
+  }) async {
+    await SecureStorageService.saveAuthToken(accessToken);
+    if (refreshToken != null && refreshToken.isNotEmpty) {
+      await SecureStorageService.saveRefreshToken(refreshToken);
+    }
+    _dio.options.headers['Authorization'] = 'Bearer $accessToken';
+  }
+
+  Future<void> clearAuthTokens() async {
+    await SecureStorageService.clearAll();
     _dio.options.headers.remove('Authorization');
   }
 

@@ -1,6 +1,6 @@
 import 'package:geocoding/geocoding.dart';
 import 'package:latlong2/latlong.dart';
-import '../errors/failures.dart';
+import 'package:roomly/core/errors/failures.dart';
 import 'package:dartz/dartz.dart';
 
 /// Service for geocoding and reverse geocoding

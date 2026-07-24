@@ -1,8 +1,8 @@
-import '../../domain/entities/access_pass_entity.dart';
-import '../../domain/repositories/access_pass_repository.dart';
-import '../models/access_pass_model.dart';
-import '../../core/network/api_client.dart';
-import '../../core/errors/failures.dart';
+import 'package:roomly/domain/entities/access_pass_entity.dart';
+import 'package:roomly/domain/repositories/access_pass_repository.dart';
+import 'package:roomly/data/models/access_pass_model.dart';
+import 'package:roomly/core/network/api_client.dart';
+import 'package:roomly/core/errors/failures.dart';
 import 'package:dio/dio.dart';
 import 'package:dartz/dartz.dart';
 

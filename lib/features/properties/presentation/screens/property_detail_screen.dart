@@ -2,13 +2,20 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:latlong2/latlong.dart';
-import '../../../../core/theme/app_colors.dart';
-import '../../../../core/theme/app_text_styles.dart';
-import '../../providers/property_notifier.dart';
-import '../../../payment/providers/payment_notifier.dart';
-import '../widgets/common_widgets.dart';
-import '../../../payment/presentation/screens/access_pass_purchase_screen.dart';
-import '../../../location/presentation/widgets/property_location_map.dart';
+import 'package:roomly/core/theme/app_colors.dart';
+import 'package:roomly/core/theme/app_text_styles.dart';
+import 'package:roomly/features/properties/providers/property_notifier.dart';
+import 'package:roomly/features/payment/providers/payment_notifier.dart';
+import 'package:roomly/presentation/widgets/common_widgets.dart';
+import 'package:roomly/features/payment/presentation/screens/access_pass_purchase_screen.dart';
+import 'package:roomly/features/location/presentation/widgets/property_location_map.dart';
+import 'package:roomly/features/reviews/providers/review_notifier.dart';
+import 'package:roomly/features/reviews/presentation/widgets/review_card.dart';
+import 'package:roomly/features/reviews/presentation/widgets/rating_stars.dart';
+import 'package:roomly/features/reviews/presentation/widgets/review_form.dart';
+import 'package:roomly/features/reviews/presentation/screens/review_list_screen.dart';
+import 'package:roomly/features/enquiries/providers/enquiry_notifier.dart';
+import 'package:roomly/features/enquiries/presentation/screens/enquiry_chat_screen.dart';
 
 /// Property Detail Screen with Access Pass logic
 class PropertyDetailScreen extends StatefulWidget {
@@ -47,6 +54,8 @@ class _PropertyDetailScreenState extends State<PropertyDetailScreen> {
     // Load property details
     if (mounted) {
       context.read<PropertyNotifier>().loadPropertyDetail(widget.propertyId);
+      // Load reviews for property (new review feature)
+      context.read<ReviewNotifier>().loadReviews(widget.propertyId);
     }
   }
 
@@ -55,6 +64,62 @@ class _PropertyDetailScreenState extends State<PropertyDetailScreen> {
       context,
       MaterialPageRoute(builder: (_) => const AccessPassPurchaseScreen()),
     );
+  }
+
+  Future<void> _handleChatWithOwner() async {
+    final property = context.read<PropertyNotifier>().selectedProperty;
+    if (property == null) return;
+    final enquiryNotifier = context.read<EnquiryNotifier>();
+
+    // Show dialog to enter initial message
+    final messageController = TextEditingController(text: 'Hi, I am interested in ${property.title}');
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (_) => AlertDialog(
+        title: const Text('Send Enquiry'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text('Property: ${property.title}', style: AppTextStyles.bodySmall.copyWith(color: AppColors.textSecondary)),
+            const SizedBox(height: 12),
+            TextField(
+              controller: messageController,
+              maxLines: 3,
+              decoration: InputDecoration(
+                labelText: 'Message',
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Cancel')),
+          ElevatedButton(onPressed: () => Navigator.pop(context, true), child: const Text('Send')),
+        ],
+      ),
+    );
+
+    if (confirmed != true) return;
+
+    final enquiry = await enquiryNotifier.createEnquiry(
+      propertyId: property.id,
+      message: messageController.text.trim(),
+    );
+
+    if (!mounted) return;
+
+    if (enquiry != null) {
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) => EnquiryChatScreen(enquiryId: enquiry.id, isOwnerView: false),
+        ),
+      );
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(enquiryNotifier.errorMessage ?? 'Failed to send enquiry'), backgroundColor: AppColors.error),
+      );
+    }
   }
 
   Future<void> _launchWhatsApp(String phone, String propertyTitle) async {
@@ -228,6 +293,10 @@ class _PropertyDetailScreenState extends State<PropertyDetailScreen> {
                               _buildLocationMap(property),
                               const SizedBox(height: 24),
                             ],
+
+                            // Reviews Section (new)
+                            _buildReviewsSection(),
+                            const SizedBox(height: 24),
 
                             // CTA Button
                             _buildCTAButton(property),
@@ -469,29 +538,50 @@ class _PropertyDetailScreenState extends State<PropertyDetailScreen> {
 
   Widget _buildCTAButton(dynamic property) {
     if (_hasActivePass) {
-      return Row(
+      return Column(
         children: [
-          Expanded(
-            child: OutlinedButton.icon(
-              onPressed: () => _launchWhatsApp('9876543210', property.title),
-              icon: const Icon(Icons.whatsapp, color: AppColors.success),
-              label: const Text('WhatsApp'),
-              style: OutlinedButton.styleFrom(
+          SizedBox(
+            width: double.infinity,
+            child: ElevatedButton.icon(
+              onPressed: _handleChatWithOwner,
+              icon: const Icon(Icons.chat_bubble, color: Colors.white),
+              label: const Text('Chat with Owner', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600)),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.primary,
                 padding: const EdgeInsets.symmetric(vertical: 16),
-                side: const BorderSide(color: AppColors.success, width: 2),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
               ),
             ),
           ),
-          const SizedBox(width: 16),
-          Expanded(
-            child: ElevatedButton.icon(
-              onPressed: () => _launchCall('9876543210'),
-              icon: const Icon(Icons.call),
-              label: const Text('Call Now'),
-              style: ElevatedButton.styleFrom(
-                padding: const EdgeInsets.symmetric(vertical: 16),
+          const SizedBox(height: 12),
+          Row(
+            children: [
+              Expanded(
+                child: OutlinedButton.icon(
+                  onPressed: () => _launchWhatsApp('9876543210', property.title),
+                  icon: const Icon(Icons.whatsapp, color: AppColors.success),
+                  label: const Text('WhatsApp'),
+                  style: OutlinedButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    side: const BorderSide(color: AppColors.success, width: 1.5),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  ),
+                ),
               ),
-            ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: OutlinedButton.icon(
+                  onPressed: () => _launchCall('9876543210'),
+                  icon: const Icon(Icons.call, color: AppColors.primary),
+                  label: const Text('Call'),
+                  style: OutlinedButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    side: const BorderSide(color: AppColors.primary, width: 1.5),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  ),
+                ),
+              ),
+            ],
           ),
         ],
       );
@@ -595,5 +685,86 @@ class _PropertyDetailScreenState extends State<PropertyDetailScreen> {
         ],
       ),
     );
+  }
+
+  Widget _buildReviewsSection() {
+    return Consumer<ReviewNotifier>(builder: (context, reviewNotifier, _) {
+      final reviews = reviewNotifier.reviews;
+      final avg = reviewNotifier.averageRating;
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              _buildSectionTitle('Reviews (${reviews.length})'),
+              if (reviews.isNotEmpty)
+                TextButton(
+                  onPressed: () {
+                    final prop = context.read<PropertyNotifier>().selectedProperty;
+                    if (prop == null) return;
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => ReviewListScreen(
+                          propertyId: prop.id,
+                          propertyTitle: prop.title,
+                        ),
+                      ),
+                    );
+                  },
+                  child: const Text('View All'),
+                ),
+            ],
+          ),
+          if (reviews.isNotEmpty) ...[
+            Row(
+              children: [
+                RatingStars(rating: avg, size: 20),
+                const SizedBox(width: 8),
+                Text('${avg.toStringAsFixed(1)} • ${reviews.length} reviews',
+                    style: AppTextStyles.bodyMedium.copyWith(fontWeight: FontWeight.w600)),
+              ],
+            ),
+            const SizedBox(height: 12),
+            ...reviews.take(2).map((r) => ReviewCard(review: r)),
+          ] else ...[
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: AppColors.surface,
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: AppColors.border),
+              ),
+              child: Row(
+                children: [
+                  const Icon(Icons.reviews_outlined, color: AppColors.textHint),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Text('No reviews yet. Be the first to review!',
+                        style: AppTextStyles.bodyMedium.copyWith(color: AppColors.textSecondary)),
+                  ),
+                ],
+              ),
+            ),
+          ],
+          const SizedBox(height: 12),
+          SizedBox(
+            width: double.infinity,
+            child: OutlinedButton.icon(
+              onPressed: () => ReviewForm.show(context, widget.propertyId),
+              icon: const Icon(Icons.rate_review_outlined),
+              label: const Text('Write a Review'),
+              style: OutlinedButton.styleFrom(
+                padding: const EdgeInsets.symmetric(vertical: 12),
+                side: const BorderSide(color: AppColors.primary),
+                foregroundColor: AppColors.primary,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              ),
+            ),
+          ),
+        ],
+      );
+    });
   }
 }

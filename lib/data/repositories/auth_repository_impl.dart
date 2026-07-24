@@ -1,9 +1,10 @@
-import '../../domain/entities/user_entity.dart';
-import '../../domain/repositories/auth_repository.dart';
-import '../models/user_model.dart';
-import '../../core/network/api_client.dart';
-import '../../core/errors/failures.dart';
+import 'package:dartz/dartz.dart';
 import 'package:dio/dio.dart';
+import 'package:roomly/domain/entities/user_entity.dart';
+import 'package:roomly/domain/repositories/auth_repository.dart';
+import 'package:roomly/data/models/user_model.dart';
+import 'package:roomly/core/network/api_client.dart';
+import 'package:roomly/core/errors/failures.dart';
 
 /// Implementation of AuthRepository
 /// Handles all authentication-related data operations
@@ -13,7 +14,7 @@ class AuthRepositoryImpl implements AuthRepository {
   const AuthRepositoryImpl({required this.apiClient});
 
   @override
-  Future<Either<Failure, UserModel>> register({
+  Future<Either<Failure, UserEntity>> register({
     required String name,
     required String email,
     required String phone,
@@ -192,7 +193,7 @@ class AuthRepositoryImpl implements AuthRepository {
   }
 
   @override
-  Future<Either<Failure, UserModel>> getCurrentUser() async {
+  Future<Either<Failure, UserEntity>> getCurrentUser() async {
     try {
       final response = await apiClient.get('/auth/me');
 

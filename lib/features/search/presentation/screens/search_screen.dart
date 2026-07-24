@@ -1,42 +1,40 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-
-import '../../../core/theme/app_colors.dart';
-import '../../../core/theme/app_text_styles.dart';
-import '../../properties/providers/property_notifier.dart';
-import '../widgets/filter_chip_widget.dart';
-import '../widgets/search_bar_widget.dart';
+import 'package:roomly/core/theme/app_colors.dart';
+import 'package:roomly/core/theme/app_text_styles.dart';
+import 'package:roomly/domain/entities/property_entity.dart';
+import 'package:roomly/features/properties/providers/property_notifier.dart';
+import 'package:roomly/features/search/providers/search_notifier.dart';
+import 'package:roomly/features/search/domain/entities/search_filter_entity.dart';
+import 'package:roomly/features/search/presentation/widgets/search_map_view.dart';
+import 'package:roomly/features/properties/presentation/screens/property_detail_screen.dart';
+import 'package:roomly/features/location/providers/location_notifier.dart';
 
 class SearchScreen extends StatefulWidget {
-  const SearchScreen({Key? key}) : super(key: key);
+  const SearchScreen({super.key});
 
   @override
   State<SearchScreen> createState() => _SearchScreenState();
 }
 
 class _SearchScreenState extends State<SearchScreen> {
-  String _selectedCity = 'All';
-  String _selectedPropertyType = 'All';
-  String _selectedRoomType = 'All';
-  RangeValues _rentRange = const RangeValues(0, 50000);
-  bool _furnished = false;
-  bool _attachedBathroom = false;
-  bool _parking = false;
-  bool _wifi = false;
-  bool _petFriendly = false;
-  String _sortBy = 'newest';
-  bool _showFilters = false;
-
-  final List<String> _cities = ['All', 'Mumbai', 'Delhi', 'Bangalore', 'Chennai', 'Pune', 'Hyderabad'];
-  final List<String> _propertyTypes = ['All', 'Apartment', 'House', 'PG', 'Hostel'];
-  final List<String> _roomTypes = ['All', '1 RK', '1 BHK', '2 BHK', '3 BHK', 'Shared'];
+  bool _isMapView = false;
+  PropertyEntity? _selectedPropertyForMap;
+  final TextEditingController _searchController = TextEditingController();
 
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       context.read<PropertyNotifier>().loadProperties();
+      context.read<SearchNotifier>().initialize();
     });
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
   }
 
   @override
@@ -44,257 +42,543 @@ class _SearchScreenState extends State<SearchScreen> {
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(
-        title: const Text('Search Properties'),
         backgroundColor: AppColors.surface,
         elevation: 0,
+        title: const Text('Search & Explore'),
         actions: [
           IconButton(
-            icon: Icon(_showFilters ? Icons.filter_alt : Icons.filter_alt_outlined),
-            onPressed: () => setState(() => _showFilters = !_showFilters),
+            icon: Icon(_isMapView ? Icons.list_alt : Icons.map_outlined),
+            tooltip: _isMapView ? 'List View' : 'Map View',
+            onPressed: () => setState(() => _isMapView = !_isMapView),
           ),
+          Consumer<SearchNotifier>(builder: (context, searchNotifier, _) {
+            final count = searchNotifier.state.filters.activeFiltersCount;
+            return Stack(
+              children: [
+                IconButton(
+                  icon: const Icon(Icons.tune),
+                  onPressed: () => _showFiltersBottomSheet(context),
+                ),
+                if (count > 0)
+                  Positioned(
+                    right: 8,
+                    top: 8,
+                    child: Container(
+                      padding: const EdgeInsets.all(4),
+                      decoration: const BoxDecoration(color: AppColors.primary, shape: BoxShape.circle),
+                      child: Text('$count',
+                          style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold)),
+                    ),
+                  ),
+              ],
+            );
+          }),
         ],
       ),
       body: Column(
         children: [
-          // Search Bar
-          const SearchBarWidget(),
-          
-          // Filters Section
-          if (_showFilters) _buildFiltersPanel(),
-          
-          // Quick Filters
+          // Unified Search Bar with integrated map filter queries
+          _buildSearchBar(),
+          // Quick city chips + rent range
           _buildQuickFilters(),
-          
-          // Results Count
-          _buildResultsCount(),
-          
-          // Property List
-          Expanded(child: _buildPropertyList()),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildFiltersPanel() {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: AppColors.surface,
-        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10, offset: const Offset(0, 4))],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text('Filters', style: AppTextStyles.headingSmall.copyWith(fontWeight: FontWeight.bold)),
-          const SizedBox(height: 16),
-          
-          // City Filter
-          _buildFilterSection('City', DropdownButton<String>(
-            value: _selectedCity,
-            underline: const SizedBox(),
-            items: _cities.map((city) => DropdownMenuItem(value: city, child: Text(city))).toList(),
-            onChanged: (value) => setState(() => _selectedCity = value!),
-          )),
-          const SizedBox(height: 12),
-          
-          // Property Type
-          _buildFilterSection('Property Type', DropdownButton<String>(
-            value: _selectedPropertyType,
-            underline: const SizedBox(),
-            items: _propertyTypes.map((type) => DropdownMenuItem(value: type, child: Text(type))).toList(),
-            onChanged: (value) => setState(() => _selectedPropertyType = value!),
-          )),
-          const SizedBox(height: 12),
-          
-          // Room Type
-          _buildFilterSection('Room Type', DropdownButton<String>(
-            value: _selectedRoomType,
-            underline: const SizedBox(),
-            items: _roomTypes.map((type) => DropdownMenuItem(value: type, child: Text(type))).toList(),
-            onChanged: (value) => setState(() => _selectedRoomType = value!),
-          )),
-          const SizedBox(height: 16),
-          
-          // Rent Range
-          Text('Rent Range', style: AppTextStyles.bodyMedium.copyWith(fontWeight: FontWeight.w600)),
-          const SizedBox(height: 8),
-          RangeSlider(
-            values: _rentRange,
-            min: 0,
-            max: 50000,
-            divisions: 50,
-            labels: RangeLabels('₹${_rentRange.start.toInt()}', '₹${_rentRange.end.toInt()}'),
-            onChanged: (values) => setState(() => _rentRange = values),
-          ),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text('₹${_rentRange.start.toInt()}', style: AppTextStyles.bodySmall.copyWith(color: AppColors.primary)),
-                Text('₹${_rentRange.end.toInt()}', style: AppTextStyles.bodySmall.copyWith(color: AppColors.primary)),
-              ],
-            ),
-          ),
-          const SizedBox(height: 16),
-          
-          // Amenities
-          Text('Amenities', style: AppTextStyles.bodyMedium.copyWith(fontWeight: FontWeight.w600)),
-          const SizedBox(height: 8),
-          Wrap(
-            spacing: 8,
-            runSpacing: 8,
-            children: [
-              FilterChip(label: const Text('Furnished'), selected: _furnished, onSelected: (v) => setState(() => _furnished = v)),
-              FilterChip(label: const Text('Attached Bathroom'), selected: _attachedBathroom, onSelected: (v) => setState(() => _attachedBathroom = v)),
-              FilterChip(label: const Text('Parking'), selected: _parking, onSelected: (v) => setState(() => _parking = v)),
-              FilterChip(label: const Text('WiFi'), selected: _wifi, onSelected: (v) => setState(() => _wifi = v)),
-              FilterChip(label: const Text('Pet Friendly'), selected: _petFriendly, onSelected: (v) => setState(() => _petFriendly = v)),
-            ],
-          ),
-          const SizedBox(height: 16),
-          
-          // Sort By
-          Text('Sort By', style: AppTextStyles.bodyMedium.copyWith(fontWeight: FontWeight.w600)),
-          const SizedBox(height: 8),
-          Wrap(
-            spacing: 8,
-            runSpacing: 8,
-            children: [
-              FilterChip(label: const Text('Newest'), selected: _sortBy == 'newest', onSelected: (v) => setState(() => _sortBy = 'newest')),
-              FilterChip(label: const Text('Lowest Rent'), selected: _sortBy == 'lowest_rent', onSelected: (v) => setState(() => _sortBy = 'lowest_rent')),
-              FilterChip(label: const Text('Highest Rent'), selected: _sortBy == 'highest_rent', onSelected: (v) => setState(() => _sortBy = 'highest_rent')),
-            ],
-          ),
-          const SizedBox(height: 16),
-          
-          // Apply Button
-          SizedBox(
-            width: double.infinity,
-            child: ElevatedButton(
-              onPressed: _applyFilters,
-              child: const Text('Apply Filters'),
-            ),
+          // Results count + sort
+          _buildResultsHeader(),
+          // Main content: list or map
+          Expanded(
+            child: _isMapView ? _buildMapView() : _buildListView(),
           ),
         ],
       ),
     );
   }
 
-  Widget _buildFilterSection(String label, Widget child) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: [
-        Text(label, style: AppTextStyles.bodyMedium.copyWith(fontWeight: FontWeight.w600)),
-        child,
-      ],
+  Widget _buildSearchBar() {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
+      child: TextField(
+        controller: _searchController,
+        decoration: InputDecoration(
+          hintText: 'Search by city, area, property name...',
+          prefixIcon: const Icon(Icons.search, color: AppColors.textHint),
+          suffixIcon: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              if (_searchController.text.isNotEmpty)
+                IconButton(
+                  icon: const Icon(Icons.clear, size: 18),
+                  onPressed: () {
+                    _searchController.clear();
+                    context.read<PropertyNotifier>().loadProperties(refresh: true);
+                    setState(() {});
+                  },
+                ),
+              IconButton(
+                icon: const Icon(Icons.my_location, color: AppColors.primary),
+                tooltip: 'Near me',
+                onPressed: () {
+                  final locNotifier = context.read<LocationNotifier>();
+                  locNotifier.requestPermission();
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Finding nearby properties...')),
+                  );
+                },
+              ),
+            ],
+          ),
+          filled: true,
+          fillColor: AppColors.surface,
+          border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
+          enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: AppColors.border)),
+          focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: AppColors.primary, width: 1.5)),
+        ),
+        onChanged: (value) {
+          // Debounced search via PropertyNotifier with city filter
+          final notifier = context.read<PropertyNotifier>();
+          if (value.isEmpty) {
+            notifier.setFilters(const PropertyFilters());
+            notifier.loadProperties(refresh: true);
+          } else {
+            notifier.setFilters(PropertyFilters(city: value));
+            notifier.loadProperties(refresh: true);
+          }
+        },
+        onSubmitted: (value) {
+          final searchNotifier = context.read<SearchNotifier>();
+          searchNotifier.updateFilter('city', value);
+          searchNotifier.searchProperties(isRefresh: true);
+        },
+      ),
     );
   }
 
   Widget _buildQuickFilters() {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-      child: SingleChildScrollView(
-        scrollDirection: Axis.horizontal,
-        child: Row(
+    return Consumer<SearchNotifier>(builder: (context, searchNotifier, _) {
+      final filters = searchNotifier.state.filters;
+      return Container(
+        height: 48,
+        padding: const EdgeInsets.symmetric(horizontal: 16),
+        child: ListView(
+          scrollDirection: Axis.horizontal,
           children: [
-            FilterChip(label: const Text('All'), selected: _selectedCity == 'All', onSelected: (_) => setState(() => _selectedCity = 'All')),
+            _quickChip('All', filters.city == null, () {
+              searchNotifier.resetFilters();
+              context.read<PropertyNotifier>().setFilters(const PropertyFilters());
+              context.read<PropertyNotifier>().loadProperties(refresh: true);
+            }),
             const SizedBox(width: 8),
-            ..._cities.where((c) => c != 'All').map((city) => Padding(
-              padding: const EdgeInsets.only(right: 8),
-              child: FilterChip(label: Text(city), selected: _selectedCity == city, onSelected: (_) => setState(() => _selectedCity = city)),
-            )),
+            for (final city in ['Mumbai', 'Delhi', 'Bangalore', 'Pune', 'Hyderabad'])
+              Padding(
+                padding: const EdgeInsets.only(right: 8),
+                child: _quickChip(city, filters.city == city, () {
+                  searchNotifier.updateFilter('city', city);
+                  searchNotifier.loadAreas(city);
+                  context.read<PropertyNotifier>().setFilters(PropertyFilters(city: city));
+                  context.read<PropertyNotifier>().loadProperties(refresh: true);
+                }),
+              ),
+            const SizedBox(width: 8),
+            _quickChip('Furnished', filters.furnished == true, () {
+              final newVal = filters.furnished != true;
+              searchNotifier.updateFilter('furnished', newVal ? true : null);
+            }),
+            const SizedBox(width: 8),
+            _quickChip('Parking', filters.parking == true, () {
+              final newVal = filters.parking != true;
+              searchNotifier.updateFilter('parking', newVal ? true : null);
+            }),
+            const SizedBox(width: 8),
+            _quickChip('WiFi', filters.wifi == true, () {
+              final newVal = filters.wifi != true;
+              searchNotifier.updateFilter('wifi', newVal ? true : null);
+            }),
           ],
         ),
+      );
+    });
+  }
+
+  Widget _quickChip(String label, bool selected, VoidCallback onTap) {
+    return ChoiceChip(
+      label: Text(label),
+      selected: selected,
+      onSelected: (_) => onTap(),
+      selectedColor: AppColors.primary.withOpacity(0.15),
+      labelStyle: TextStyle(
+        color: selected ? AppColors.primary : AppColors.textSecondary,
+        fontWeight: selected ? FontWeight.w600 : FontWeight.normal,
+        fontSize: 12,
       ),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20), side: BorderSide(color: selected ? AppColors.primary : AppColors.border)),
     );
   }
 
-  Widget _buildResultsCount() {
-    return Consumer<PropertyNotifier>(
-      builder: (context, notifier, _) {
-        final count = notifier.properties.length;
-        return Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-          child: Text(
-            '$count propert${count == 1 ? 'y' : 'ies'} found',
-            style: AppTextStyles.bodyMedium.copyWith(color: AppColors.textLight),
+  Widget _buildResultsHeader() {
+    return Consumer2<PropertyNotifier, SearchNotifier>(builder: (context, propNotifier, searchNotifier, _) {
+      final count = propNotifier.properties.length;
+      final activeFilters = searchNotifier.state.filters.activeFiltersCount;
+      return Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text('$count ${count == 1 ? 'property' : 'properties'} found${activeFilters > 0 ? ' • $activeFilters filters' : ''}',
+                style: AppTextStyles.bodySmall.copyWith(color: AppColors.textSecondary)),
+            Row(
+              children: [
+                if (activeFilters > 0)
+                  TextButton(
+                    onPressed: () {
+                      searchNotifier.resetFilters();
+                      propNotifier.setFilters(const PropertyFilters());
+                      propNotifier.loadProperties(refresh: true);
+                    },
+                    child: const Text('Clear'),
+                  ),
+                DropdownButton<String>(
+                  value: 'newest',
+                  underline: const SizedBox(),
+                  items: const [
+                    DropdownMenuItem(value: 'newest', child: Text('Newest')),
+                    DropdownMenuItem(value: 'lowest_rent', child: Text('Lowest')),
+                    DropdownMenuItem(value: 'highest_rent', child: Text('Highest')),
+                    DropdownMenuItem(value: 'nearest', child: Text('Nearest')),
+                  ],
+                  onChanged: (v) {
+                    if (v != null) {
+                      searchNotifier.updateFilter('sortBy', v);
+                      propNotifier.setFilters(propNotifier.filters.copyWith(sortBy: v));
+                      propNotifier.loadProperties(refresh: true);
+                    }
+                  },
+                ),
+              ],
+            ),
+          ],
+        ),
+      );
+    });
+  }
+
+  Widget _buildListView() {
+    return Consumer<PropertyNotifier>(builder: (context, notifier, _) {
+      if (notifier.isLoading && notifier.properties.isEmpty) {
+        return const Center(child: CircularProgressIndicator());
+      }
+      if (notifier.error != null && notifier.properties.isEmpty) {
+        return Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const Icon(Icons.error_outline, size: 48, color: AppColors.error),
+              const SizedBox(height: 12),
+              Text(notifier.error!, style: AppTextStyles.bodyMedium.copyWith(color: AppColors.error)),
+              const SizedBox(height: 12),
+              ElevatedButton(onPressed: () => notifier.loadProperties(refresh: true), child: const Text('Retry')),
+            ],
           ),
         );
-      },
-    );
+      }
+      if (notifier.properties.isEmpty) {
+        return Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const Icon(Icons.search_off, size: 64, color: AppColors.textHint),
+              const SizedBox(height: 12),
+              Text('No properties match your filters', style: AppTextStyles.h4),
+              const SizedBox(height: 6),
+              Text('Try adjusting city, rent range or amenities',
+                  style: AppTextStyles.bodySmall.copyWith(color: AppColors.textSecondary)),
+              const SizedBox(height: 16),
+              ElevatedButton(
+                onPressed: () {
+                  context.read<SearchNotifier>().resetFilters();
+                  notifier.setFilters(const PropertyFilters());
+                  notifier.loadProperties(refresh: true);
+                },
+                child: const Text('Clear Filters'),
+              ),
+            ],
+          ),
+        );
+      }
+      return RefreshIndicator(
+        onRefresh: () => notifier.loadProperties(refresh: true),
+        child: ListView.builder(
+          padding: const EdgeInsets.all(16),
+          itemCount: notifier.properties.length,
+          itemBuilder: (ctx, idx) {
+            final p = notifier.properties[idx];
+            return Card(
+              margin: const EdgeInsets.only(bottom: 12),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              child: ListTile(
+                leading: ClipRRect(
+                  borderRadius: BorderRadius.circular(8),
+                  child: p.images.isNotEmpty
+                      ? Image.network(p.images.first, width: 60, height: 60, fit: BoxFit.cover,
+                          errorBuilder: (_, __, ___) => Container(width: 60, height: 60, color: AppColors.border, child: const Icon(Icons.home)))
+                      : Container(width: 60, height: 60, color: AppColors.border, child: const Icon(Icons.home)),
+                ),
+                title: Text(p.title, style: AppTextStyles.labelLarge, maxLines: 1, overflow: TextOverflow.ellipsis),
+                subtitle: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('${p.area}, ${p.city}', style: AppTextStyles.bodySmall.copyWith(color: AppColors.textSecondary)),
+                    const SizedBox(height: 4),
+                    Row(
+                      children: [
+                        Text('₹${p.rent.toStringAsFixed(0)}',
+                            style: AppTextStyles.bodyMedium.copyWith(color: AppColors.primary, fontWeight: FontWeight.bold)),
+                        const SizedBox(width: 8),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                          decoration: BoxDecoration(color: AppColors.primary.withOpacity(0.1), borderRadius: BorderRadius.circular(4)),
+                          child: Text(p.roomType.value, style: AppTextStyles.caption.copyWith(color: AppColors.primary)),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+                trailing: const Icon(Icons.chevron_right),
+                onTap: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => PropertyDetailScreen(propertyId: p.id)),
+                ),
+              ),
+            );
+          },
+        ),
+      );
+    });
   }
 
-  Widget _buildPropertyList() {
-    return Consumer<PropertyNotifier>(
-      builder: (context, notifier, _) {
-        if (notifier.propertiesState.isLoading) {
-          return const Center(child: CircularProgressIndicator());
-        }
-        if (notifier.propertiesState.hasError) {
-          return Center(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(Icons.error_outline, size: 48, color: AppColors.error),
-                const SizedBox(height: 16),
-                Text('Failed to load properties', style: AppTextStyles.bodyLarge.copyWith(color: AppColors.error)),
-                const SizedBox(height: 8),
-                ElevatedButton(onPressed: () => notifier.loadProperties(), child: const Text('Retry')),
-              ],
-            ),
-          );
-        }
-        if (notifier.properties.isEmpty) {
-          return Center(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(Icons.search_off, size: 64, color: AppColors.textLight),
-                const SizedBox(height: 16),
-                Text('No properties found', style: AppTextStyles.headingSmall.copyWith(color: AppColors.textDark)),
-                const SizedBox(height: 8),
-                Text('Try adjusting your filters', style: AppTextStyles.bodyMedium.copyWith(color: AppColors.textLight)),
-              ],
-            ),
-          );
-        }
-        return RefreshIndicator(
-          onRefresh: () => notifier.loadProperties(),
-          child: ListView.builder(
-            padding: const EdgeInsets.all(16),
-            itemCount: notifier.properties.length,
-            itemBuilder: (ctx, index) {
-              final property = notifier.properties[index];
-              return Card(
-                margin: const EdgeInsets.only(bottom: 16),
-                child: ListTile(
-                  leading: ClipRRect(
-                    borderRadius: BorderRadius.circular(8),
-                    child: property.images.isNotEmpty
-                        ? Image.network(property.images.first, width: 60, height: 60, fit: BoxFit.cover)
-                        : Container(width: 60, height: 60, color: AppColors.border, child: const Icon(Icons.home)),
-                  ),
-                  title: Text(property.title, style: AppTextStyles.bodyLarge.copyWith(fontWeight: FontWeight.w600)),
-                  subtitle: Text('${property.area}, ${property.city}'),
-                  trailing: Text('₹${property.rent.toInt()}', style: AppTextStyles.headingSmall.copyWith(color: AppColors.primary, fontWeight: FontWeight.bold)),
-                  onTap: () {
-                    // Navigate to detail
+  Widget _buildMapView() {
+    return Consumer<PropertyNotifier>(builder: (context, notifier, _) {
+      final properties = notifier.properties;
+      return Stack(
+        children: [
+          SearchMapView(
+            properties: properties,
+            onMarkerTap: (prop) {
+              setState(() => _selectedPropertyForMap = prop);
+              showModalBottomSheet(
+                context: context,
+                backgroundColor: Colors.transparent,
+                builder: (_) => SearchMapBottomSheet(
+                  property: prop,
+                  onViewDetails: () {
+                    Navigator.pop(context);
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (_) => PropertyDetailScreen(propertyId: prop.id)),
+                    );
                   },
                 ),
               );
             },
           ),
-        );
-      },
-    );
+          // Map overlay with count
+          Positioned(
+            top: 12,
+            left: 16,
+            right: 16,
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(20),
+                boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.1), blurRadius: 8)],
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Icon(Icons.location_on, size: 16, color: AppColors.primary),
+                  const SizedBox(width: 6),
+                  Text('${properties.length} listings in this area',
+                      style: AppTextStyles.bodySmall.copyWith(fontWeight: FontWeight.w600)),
+                  const Spacer(),
+                  if (_selectedPropertyForMap != null)
+                    Text('₹${_selectedPropertyForMap!.rent.toStringAsFixed(0)} selected',
+                        style: AppTextStyles.bodySmall.copyWith(color: AppColors.primary)),
+                ],
+              ),
+            ),
+          ),
+          // My location FAB
+          Positioned(
+            bottom: 20,
+            right: 16,
+            child: FloatingActionButton.small(
+              backgroundColor: Colors.white,
+              onPressed: () {
+                context.read<LocationNotifier>().getCurrentLocation();
+              },
+              child: const Icon(Icons.my_location, color: AppColors.primary),
+            ),
+          ),
+        ],
+      );
+    });
   }
 
-  void _applyFilters() {
-    // TODO: Apply filters to property search
-    setState(() => _showFilters = false);
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Filters applied (backend integration pending)')),
+  void _showFiltersBottomSheet(BuildContext context) {
+    final searchNotifier = context.read<SearchNotifier>();
+    final propNotifier = context.read<PropertyNotifier>();
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (_) {
+        return StatefulBuilder(builder: (context, setModalState) {
+          final filters = searchNotifier.state.filters;
+          RangeValues rentRange = RangeValues(
+            filters.minRent ?? 0,
+            filters.maxRent ?? 50000,
+          );
+          return Container(
+            maxHeight: MediaQuery.of(context).size.height * 0.85,
+            padding: const EdgeInsets.all(20),
+            decoration: const BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+            ),
+            child: SingleChildScrollView(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Center(child: Container(width: 40, height: 4, decoration: BoxDecoration(color: AppColors.border, borderRadius: BorderRadius.circular(2)))),
+                  const SizedBox(height: 16),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text('Filters', style: AppTextStyles.h3),
+                      TextButton(
+                        onPressed: () {
+                          searchNotifier.resetFilters();
+                          propNotifier.setFilters(const PropertyFilters());
+                          setModalState(() {});
+                        },
+                        child: const Text('Reset'),
+                      ),
+                    ],
+                  ),
+                  const Divider(),
+                  Text('Rent Range', style: AppTextStyles.labelLarge),
+                  RangeSlider(
+                    values: rentRange,
+                    min: 0,
+                    max: 50000,
+                    divisions: 50,
+                    labels: RangeLabels('₹${rentRange.start.toInt()}', '₹${rentRange.end.toInt()}'),
+                    onChanged: (v) => setModalState(() => rentRange = v),
+                    onChangeEnd: (v) {
+                      searchNotifier.updateFilter('minRent', v.start);
+                      searchNotifier.updateFilter('maxRent', v.end);
+                      propNotifier.setFilters(propNotifier.filters.copyWith(minRent: v.start, maxRent: v.end));
+                    },
+                  ),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text('₹${rentRange.start.toInt()}', style: AppTextStyles.bodySmall.copyWith(color: AppColors.primary)),
+                      Text('₹${rentRange.end.toInt()}', style: AppTextStyles.bodySmall.copyWith(color: AppColors.primary)),
+                    ],
+                  ),
+                  const SizedBox(height: 20),
+                  Text('Property Type', style: AppTextStyles.labelLarge),
+                  const SizedBox(height: 8),
+                  Wrap(
+                    spacing: 8,
+                    children: ['apartment', 'house', 'pg', 'villa'].map((type) {
+                      final selected = filters.propertyType == type;
+                      return ChoiceChip(
+                        label: Text(type),
+                        selected: selected,
+                        onSelected: (_) {
+                          searchNotifier.updateFilter('propertyType', selected ? null : type);
+                          // Trigger property filter
+                          PropertyType? pt;
+                          if (!selected) {
+                            try {
+                              pt = PropertyType.fromString(type);
+                            } catch (_) {}
+                          }
+                          propNotifier.setFilters(propNotifier.filters.copyWith(propertyType: selected ? null : pt));
+                          setModalState(() {});
+                        },
+                      );
+                    }).toList(),
+                  ),
+                  const SizedBox(height: 20),
+                  Text('Amenities', style: AppTextStyles.labelLarge),
+                  const SizedBox(height: 8),
+                  Wrap(
+                    spacing: 8,
+                    children: [
+                      FilterChip(
+                        label: const Text('Furnished'),
+                        selected: filters.furnished == true,
+                        onSelected: (v) {
+                          searchNotifier.updateFilter('furnished', v ? true : null);
+                          propNotifier.setFilters(propNotifier.filters.copyWith(furnished: v ? true : null));
+                          setModalState(() {});
+                        },
+                      ),
+                      FilterChip(
+                        label: const Text('Parking'),
+                        selected: filters.parking == true,
+                        onSelected: (v) {
+                          searchNotifier.updateFilter('parking', v ? true : null);
+                          propNotifier.setFilters(propNotifier.filters.copyWith(parking: v ? true : null));
+                          setModalState(() {});
+                        },
+                      ),
+                      FilterChip(
+                        label: const Text('WiFi'),
+                        selected: filters.wifi == true,
+                        onSelected: (v) {
+                          searchNotifier.updateFilter('wifi', v ? true : null);
+                          propNotifier.setFilters(propNotifier.filters.copyWith(wifi: v ? true : null));
+                          setModalState(() {});
+                        },
+                      ),
+                      FilterChip(
+                        label: const Text('Pet Friendly'),
+                        selected: filters.petFriendly == true,
+                        onSelected: (v) {
+                          searchNotifier.updateFilter('petFriendly', v ? true : null);
+                          propNotifier.setFilters(propNotifier.filters.copyWith(petFriendly: v ? true : null));
+                          setModalState(() {});
+                        },
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 24),
+                  SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton(
+                      onPressed: () {
+                        propNotifier.loadProperties(refresh: true);
+                        Navigator.pop(context);
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.primary,
+                        padding: const EdgeInsets.symmetric(vertical: 14),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      ),
+                      child: const Text('Apply Filters', style: TextStyle(color: Colors.white)),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                ],
+              ),
+            ),
+          );
+        });
+      },
     );
   }
 }
