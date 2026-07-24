@@ -109,7 +109,7 @@ class AppTextStyles {
     decoration: TextDecoration.none,
   );
 
-  // Compatibility aliases for legacy screens
+  // Compatibility aliases for legacy screens + real-time manager
   static TextStyle get headingSmall => h4;
   static TextStyle get labelLarge => GoogleFonts.poppins(
         fontSize: 14,
@@ -122,4 +122,19 @@ class AppTextStyles {
         color: AppColors.textSecondary,
       );
   static TextStyle get bodySmallMedium => bodySmall;
+  static TextStyle get bodyBold => GoogleFonts.poppins(
+        fontSize: 14,
+        fontWeight: FontWeight.bold,
+        color: AppColors.textPrimary,
+      );
+  static TextStyle get bodyLargeBold => GoogleFonts.poppins(
+        fontSize: 16,
+        fontWeight: FontWeight.bold,
+        color: AppColors.textPrimary,
+      );
+  static TextStyle get captionBold => GoogleFonts.poppins(
+        fontSize: 11,
+        fontWeight: FontWeight.bold,
+        color: AppColors.textHint,
+      );
 }

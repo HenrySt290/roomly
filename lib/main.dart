@@ -32,6 +32,8 @@ import 'package:roomly/data/repositories/enquiry_repository_impl.dart';
 import 'package:roomly/features/enquiries/providers/enquiry_notifier.dart';
 import 'package:roomly/features/enquiries/presentation/screens/enquiry_list_screen.dart';
 import 'package:roomly/features/enquiries/presentation/screens/enquiry_chat_screen.dart';
+import 'package:roomly/features/notifications/providers/app_notification_manager.dart';
+import 'package:roomly/features/notifications/presentation/widgets/notification_overlay.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -121,6 +123,10 @@ void main() async {
             enquiryRepository: context.read<EnquiryRepositoryImpl>(),
           )..loadAllEnquiries(),
         ),
+        // App-wide Real-time Notification Manager (matches active chat + subscription state changes)
+        ChangeNotifierProvider<AppNotificationManager>(
+          create: (_) => AppNotificationManager(),
+        ),
       ],
       child: const RoomlyApp(),
     ),
@@ -132,34 +138,37 @@ class RoomlyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      title: AppStrings.appName,
-      debugShowCheckedModeBanner: false,
-      theme: AppTheme.lightTheme,
-      darkTheme: AppTheme.darkTheme,
-      themeMode: ThemeMode.light,
-      initialRoute: '/',
-      routes: {
-        '/': (context) => const LoginScreen(),
-        '/home': (context) => const PropertyListScreen(),
-        '/access-pass': (context) => const AccessPassPurchaseScreen(),
-        '/profile': (context) => const ProfileScreen(),
-        '/search': (context) => const SearchScreen(),
-        '/notifications': (context) => const NotificationsScreen(),
-        '/my-listings': (context) => const MyListingsScreen(),
-        '/add-property': (context) => const AddPropertyScreen(),
-        '/add-property-flow': (context) => const AddPropertyFlowScreen(),
-        '/pick-location': (context) => const LocationPickerScreen(),
-        '/enquiries': (context) => const EnquiryListScreen(),
-        // enquiry chat needs args, handled via MaterialPageRoute in code, but keep placeholder
-        '/enquiry-chat': (context) => const EnquiryListScreen(),
-      },
-      builder: (context, child) {
-        return MediaQuery(
-          data: MediaQuery.of(context).copyWith(textScaler: TextScaler.noScaling),
-          child: child!,
-        );
-      },
+    return AppNotificationListener(
+      child: MaterialApp(
+        title: AppStrings.appName,
+        debugShowCheckedModeBanner: false,
+        theme: AppTheme.lightTheme,
+        darkTheme: AppTheme.darkTheme,
+        themeMode: ThemeMode.light,
+        initialRoute: '/',
+        routes: {
+          '/': (context) => const LoginScreen(),
+          '/home': (context) => const PropertyListScreen(),
+          '/access-pass': (context) => const AccessPassPurchaseScreen(),
+          '/profile': (context) => const ProfileScreen(),
+          '/search': (context) => const SearchScreen(),
+          '/notifications': (context) => const NotificationsScreen(),
+          '/my-listings': (context) => const MyListingsScreen(),
+          '/add-property': (context) => const AddPropertyScreen(),
+          '/add-property-flow': (context) => const AddPropertyFlowScreen(),
+          '/pick-location': (context) => const LocationPickerScreen(),
+          '/enquiries': (context) => const EnquiryListScreen(),
+          '/enquiry-chat': (context) => const EnquiryListScreen(),
+        },
+        builder: (context, child) {
+          return NotificationOverlay(
+            child: MediaQuery(
+              data: MediaQuery.of(context).copyWith(textScaler: TextScaler.noScaling),
+              child: child!,
+            ),
+          );
+        },
+      ),
     );
   }
 }

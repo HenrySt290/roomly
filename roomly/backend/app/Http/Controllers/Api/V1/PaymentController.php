@@ -7,6 +7,7 @@ use App\Models\Property;
 use App\Models\Transaction;
 use App\Models\AccessPass;
 use App\Models\ListingPayment;
+use App\Models\Notification;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 
@@ -116,7 +117,7 @@ class PaymentController extends Controller
                 'paid_at' => now(),
             ]);
 
-            // Handle based on type
+            // Handle based on type + real-time notifications
             if ($transaction->type === 'listing_fee') {
                 $propertyId = $transaction->metadata['property_id'] ?? $request->get('property_id');
                 if ($propertyId) {
@@ -128,6 +129,20 @@ class PaymentController extends Controller
                             'expires_at' => now()->addDays(90),
                         ]);
                         $property->owner->ownerProfile?->increment('active_listings');
+
+                        try {
+                            Notification::create([
+                                'user_id' => $property->owner_id,
+                                'type' => 'payment',
+                                'category' => 'payment',
+                                'title' => 'Listing Published!',
+                                'message' => $property->title . ' is now live after ₹9 payment',
+                                'data' => ['property_id' => $property->id, 'type' => 'listing_published'],
+                                'action_url' => '/properties/' . $property->id,
+                                'is_read' => false,
+                                'sent_at' => now(),
+                            ]);
+                        } catch (\Exception $e) {}
                     }
                 }
                 ListingPayment::where('transaction_id', $transaction->id)->update([
@@ -137,7 +152,7 @@ class PaymentController extends Controller
                     'paid_at' => now(),
                 ]);
             } elseif ($transaction->type === 'access_pass') {
-                AccessPass::create([
+                $pass = AccessPass::create([
                     'user_id' => $transaction->user_id,
                     'transaction_id' => $transaction->id,
                     'status' => 'active',
@@ -151,6 +166,20 @@ class PaymentController extends Controller
                         'payment_id' => $request->payment_id,
                     ],
                 ]);
+
+                try {
+                    Notification::create([
+                        'user_id' => $transaction->user_id,
+                        'type' => 'payment',
+                        'category' => 'payment',
+                        'title' => 'Access Pass Activated!',
+                        'message' => 'Your ₹5 pass is active for 24 hours. Unlock unlimited properties!',
+                        'data' => ['type' => 'access_pass_activated', 'expires_at' => $pass->expires_at, 'remaining_seconds' => 86400],
+                        'action_url' => '/home',
+                        'is_read' => false,
+                        'sent_at' => now(),
+                    ]);
+                } catch (\Exception $e) {}
             }
         }
 

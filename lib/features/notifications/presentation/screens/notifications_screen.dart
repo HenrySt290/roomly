@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:roomly/features/notifications/providers/notification_notifier.dart';
+import 'package:roomly/features/notifications/providers/app_notification_manager.dart';
 import 'package:roomly/domain/entities/notification_entity.dart';
 import 'package:roomly/core/theme/app_colors.dart';
 import 'package:roomly/core/theme/app_text_styles.dart';
@@ -19,7 +20,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> with SingleTi
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 3, vsync: this);
+    _tabController = TabController(length: 4, vsync: this);
     WidgetsBinding.instance.addPostFrameCallback((_) {
       context.read<NotificationNotifier>().initialize();
     });
@@ -70,17 +71,21 @@ class _NotificationsScreenState extends State<NotificationsScreen> with SingleTi
           labelColor: AppColors.primary,
           unselectedLabelColor: AppColors.textLight,
           indicatorColor: AppColors.primary,
+          isScrollable: true,
           tabs: const [
             Tab(text: 'All'),
             Tab(text: 'Unread'),
+            Tab(text: 'Live'),
             Tab(text: 'Types'),
           ],
           onTap: (index) {
             if (index == 0) {
               setState(() => _selectedFilter = null);
-              context.read<NotificationNotifier>().setFilter(null);
+              context.read<NotificationNotifier>().filterByType(null);
             } else if (index == 1) {
               // Filter unread - handled in UI
+            } else if (index == 2) {
+              // Live real-time tab - no filter change
             } else {
               // Show type selector dialog
               _showTypeFilterDialog();
@@ -88,38 +93,89 @@ class _NotificationsScreenState extends State<NotificationsScreen> with SingleTi
           },
         ),
       ),
-      body: Consumer<NotificationNotifier>(
-        builder: (context, notifier, _) {
-          if (notifier.state.isLoading && notifier.state.notifications.isEmpty) {
-            return const Center(child: CircularProgressIndicator());
-          }
-
-          if (notifier.state.error != null && notifier.state.notifications.isEmpty) {
-            return _buildErrorState(notifier.state.error!);
-          }
-
-          var notifications = notifier.state.notifications;
-          
-          // Filter by unread if tab 1 is selected
-          if (_tabController.index == 1) {
-            notifications = notifications.where((n) => !n.isRead).toList();
-          }
-
-          if (notifications.isEmpty) {
-            return _buildEmptyState();
-          }
-
-          return RefreshIndicator(
-            onRefresh: () => notifier.refresh(),
-            child: ListView.builder(
-              itemCount: notifications.length,
-              itemBuilder: (ctx, index) {
-                final notification = notifications[index];
-                return _buildNotificationCard(notification, notifier);
-              },
+      body: TabBarView(
+        controller: _tabController,
+        children: [
+          // All
+          Consumer<NotificationNotifier>(
+            builder: (context, notifier, _) {
+              if (notifier.state.isLoading && notifier.state.notifications.isEmpty) {
+                return const Center(child: CircularProgressIndicator());
+              }
+              if (notifier.state.errorMessage != null && notifier.state.notifications.isEmpty) {
+                return _buildErrorState(notifier.state.errorMessage!);
+              }
+              var notifications = notifier.state.notifications;
+              if (notifications.isEmpty) return _buildEmptyState();
+              return RefreshIndicator(
+                onRefresh: () => notifier.refresh(),
+                child: ListView.builder(
+                  itemCount: notifications.length,
+                  itemBuilder: (ctx, index) => _buildNotificationCard(notifications[index], notifier),
+                ),
+              );
+            },
+          ),
+          // Unread
+          Consumer<NotificationNotifier>(
+            builder: (context, notifier, _) {
+              var notifications = notifier.state.notifications.where((n) => !n.isRead).toList();
+              if (notifications.isEmpty) return _buildEmptyState(isUnread: true);
+              return ListView.builder(
+                itemCount: notifications.length,
+                itemBuilder: (ctx, index) => _buildNotificationCard(notifications[index], notifier),
+              );
+            },
+          ),
+          // Live - Real-time from AppNotificationManager (chat + payment)
+          Consumer<AppNotificationManager>(
+            builder: (context, manager, _) {
+              final live = manager.notifications;
+              if (live.isEmpty) {
+                return Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      const Icon(Icons.bolt_outlined, size: 64, color: AppColors.textHint),
+                      const SizedBox(height: 12),
+                      Text('No live events yet', style: AppTextStyles.h4),
+                      const SizedBox(height: 6),
+                      Text('Real-time chat messages & payment successes appear here',
+                          style: AppTextStyles.bodySmall.copyWith(color: AppColors.textSecondary), textAlign: TextAlign.center),
+                      const SizedBox(height: 16),
+                      ElevatedButton.icon(
+                        onPressed: () => manager.pushCustom(title: 'Test Live Event 🔔', body: 'This is a simulated real-time notification for demo', type: NotificationType.system),
+                        icon: const Icon(Icons.play_arrow),
+                        label: const Text('Simulate Event'),
+                      ),
+                    ],
+                  ),
+                );
+              }
+              return ListView.builder(
+                padding: const EdgeInsets.only(top: 8),
+                itemCount: live.length,
+                itemBuilder: (ctx, index) {
+                  final n = live[index];
+                  return _buildLiveCard(n, manager);
+                },
+              );
+            },
+          ),
+          // Types - shows filter dialog trigger
+          Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const Icon(Icons.filter_list, size: 64, color: AppColors.textHint),
+                const SizedBox(height: 12),
+                Text('Filter by Type', style: AppTextStyles.h4),
+                const SizedBox(height: 8),
+                ElevatedButton(onPressed: _showTypeFilterDialog, child: const Text('Choose Type')),
+              ],
             ),
-          );
-        },
+          ),
+        ],
       ),
     );
   }
@@ -161,7 +217,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> with SingleTi
       selected: isSelected,
       onSelected: (selected) {
         setState(() => _selectedFilter = selected ? type : null);
-        context.read<NotificationNotifier>().setFilter(type);
+        context.read<NotificationNotifier>().filterByType(type);
         Navigator.pop(context);
       },
     );
@@ -188,7 +244,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> with SingleTi
     );
   }
 
-  Widget _buildEmptyState() {
+  Widget _buildEmptyState({bool isUnread = false}) {
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
@@ -197,10 +253,86 @@ class _NotificationsScreenState extends State<NotificationsScreen> with SingleTi
           const SizedBox(height: 16),
           Text('No notifications yet', style: AppTextStyles.headingSmall.copyWith(color: AppColors.textDark)),
           const SizedBox(height: 8),
-          Text(_tabController.index == 1 
-              ? 'You have no unread notifications'
-              : 'When you get notifications, they\'ll appear here', 
+          Text(isUnread ? 'You have no unread notifications' : 'When you get notifications, they\'ll appear here',
               style: AppTextStyles.bodyMedium.copyWith(color: AppColors.textLight)),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildLiveCard(NotificationEntity notification, AppNotificationManager manager) {
+    IconData icon;
+    Color iconColor;
+    switch (notification.type) {
+      case NotificationType.enquiry:
+        icon = Icons.chat_bubble;
+        iconColor = AppColors.info;
+        break;
+      case NotificationType.payment:
+        icon = Icons.payment;
+        iconColor = AppColors.success;
+        break;
+      case NotificationType.accessPass:
+        icon = Icons.confirmation_num;
+        iconColor = AppColors.primary;
+        break;
+      case NotificationType.listingApproved:
+        icon = Icons.check_circle;
+        iconColor = AppColors.success;
+        break;
+      case NotificationType.review:
+        icon = Icons.star;
+        iconColor = AppColors.warning;
+        break;
+      default:
+        icon = Icons.bolt;
+        iconColor = AppColors.primary;
+    }
+
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: iconColor.withOpacity(0.2)),
+        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 8, offset: const Offset(0, 2))],
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(color: iconColor.withOpacity(0.12), shape: BoxShape.circle),
+            child: Icon(icon, color: iconColor, size: 20),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(notification.title, style: AppTextStyles.bodyMedium.copyWith(fontWeight: FontWeight.bold)),
+                const SizedBox(height: 2),
+                Text(notification.body, style: AppTextStyles.bodySmall.copyWith(color: AppColors.textSecondary)),
+                const SizedBox(height: 6),
+                Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                      decoration: BoxDecoration(color: iconColor.withOpacity(0.1), borderRadius: BorderRadius.circular(4)),
+                      child: Text('LIVE', style: TextStyle(color: iconColor, fontSize: 9, fontWeight: FontWeight.bold)),
+                    ),
+                    const SizedBox(width: 8),
+                    Text(_formatTime(notification.timestamp), style: AppTextStyles.caption.copyWith(color: AppColors.textHint, fontSize: 11)),
+                  ],
+                ),
+              ],
+            ),
+          ),
+          IconButton(
+            icon: const Icon(Icons.close, size: 18, color: AppColors.textHint),
+            onPressed: () => manager.markAsRead(notification.id),
+          ),
         ],
       ),
     );

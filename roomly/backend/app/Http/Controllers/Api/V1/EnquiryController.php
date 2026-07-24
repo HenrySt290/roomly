@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Enquiry;
 use App\Models\EnquiryMessage;
 use App\Models\Property;
+use App\Models\Notification;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 
@@ -80,12 +81,6 @@ class EnquiryController extends Controller
             return response()->json(['message' => 'Cannot enquire on own property'], 403);
         }
 
-        // Check if active pass required - tenant must have active pass unless owner
-        if (!$user->hasActiveAccessPass() && $user->isTenant()) {
-            // For demo, allow but warn - production would block
-            // return response()->json(['message' => 'Active access pass required'], 403);
-        }
-
         $enquiry = Enquiry::create([
             'property_id' => $property->id,
             'tenant_id' => $user->id,
@@ -93,14 +88,13 @@ class EnquiryController extends Controller
             'message' => $request->message,
             'contact_method' => $request->contact_method ?? 'chat',
             'status' => 'pending',
-            'unread_count' => 1, // For owner
+            'unread_count' => 1,
             'last_message' => $request->message,
             'last_message_at' => now(),
         ]);
 
         $property->increment('enquiries_count');
 
-        // Create first message
         EnquiryMessage::create([
             'enquiry_id' => $enquiry->id,
             'sender_id' => $user->id,
@@ -108,6 +102,17 @@ class EnquiryController extends Controller
             'message' => $request->message,
             'type' => 'text',
         ]);
+
+        // Real-time notification for owner
+        $this->createNotification(
+            userId: $property->owner_id,
+            type: 'enquiry',
+            category: 'enquiry',
+            title: 'New enquiry for ' . $property->title,
+            message: $user->name . ' is interested in your property',
+            data: ['enquiry_id' => $enquiry->id, 'property_id' => $property->id, 'tenant_name' => $user->name],
+            actionUrl: '/enquiries/' . $enquiry->id
+        );
 
         return response()->json([
             'message' => 'Enquiry sent',
@@ -135,7 +140,6 @@ class EnquiryController extends Controller
             'unread_count' => $enquiry->unread_count + 1,
         ]);
 
-        // Also create message for chat history
         EnquiryMessage::create([
             'enquiry_id' => $enquiry->id,
             'sender_id' => $user->id,
@@ -143,6 +147,18 @@ class EnquiryController extends Controller
             'message' => $request->message,
             'type' => 'text',
         ]);
+
+        // Notify recipient
+        $recipientId = $user->id === $enquiry->tenant_id ? $enquiry->owner_id : $enquiry->tenant_id;
+        $this->createNotification(
+            userId: $recipientId,
+            type: 'enquiry',
+            category: 'enquiry',
+            title: 'New reply on ' . $enquiry->property->title,
+            message: $request->message,
+            data: ['enquiry_id' => $enquiry->id],
+            actionUrl: '/enquiries/' . $enquiry->id
+        );
 
         return response()->json([
             'message' => 'Replied',
@@ -200,6 +216,24 @@ class EnquiryController extends Controller
             'metadata' => $request->metadata,
         ]);
 
+        // Real-time notification
+        $recipientId = $user->id === $enquiry->tenant_id ? $enquiry->owner_id : $enquiry->tenant_id;
+        $title = match ($request->type) {
+            'booking_request' => 'New booking request',
+            'booking_confirmed' => 'Booking confirmed',
+            default => 'New message',
+        };
+
+        $this->createNotification(
+            userId: $recipientId,
+            type: $request->type === 'booking_request' ? 'booking' : 'enquiry',
+            category: 'enquiry',
+            title: $title . ' - ' . $enquiry->property->title,
+            message: $request->message,
+            data: ['enquiry_id' => $enquiry->id, 'type' => $request->type],
+            actionUrl: '/enquiries/' . $enquiry->id
+        );
+
         return response()->json([
             'message' => 'Message sent',
             'data' => $this->formatMessage($message),
@@ -234,6 +268,17 @@ class EnquiryController extends Controller
             'type' => 'system',
         ]);
 
+        $recipientId = auth()->id() === $enquiry->tenant_id ? $enquiry->owner_id : $enquiry->tenant_id;
+        $this->createNotification(
+            userId: $recipientId,
+            type: 'system',
+            category: 'enquiry',
+            title: 'Enquiry closed',
+            message: $enquiry->property->title . ' enquiry closed',
+            data: ['enquiry_id' => $enquiry->id],
+            actionUrl: '/enquiries/' . $enquiry->id
+        );
+
         return response()->json(['message' => 'Enquiry closed']);
     }
 
@@ -250,6 +295,16 @@ class EnquiryController extends Controller
             'type' => 'booking_confirmed',
         ]);
 
+        $this->createNotification(
+            userId: $enquiry->tenant_id,
+            type: 'booking',
+            category: 'enquiry',
+            title: 'Booking accepted!',
+            message: 'Owner accepted your booking for ' . $enquiry->property->title,
+            data: ['enquiry_id' => $enquiry->id, 'property_id' => $enquiry->property_id],
+            actionUrl: '/enquiries/' . $enquiry->id
+        );
+
         return response()->json(['message' => 'Booking accepted', 'data' => $this->formatEnquiry($enquiry)]);
     }
 
@@ -260,10 +315,28 @@ class EnquiryController extends Controller
         return response()->json(['message' => 'Enquiry deleted']);
     }
 
+    private function createNotification(int $userId, string $type, string $category, string $title, string $message, ?array $data = null, ?string $actionUrl = null): void
+    {
+        try {
+            Notification::create([
+                'user_id' => $userId,
+                'type' => $type,
+                'category' => $category,
+                'title' => $title,
+                'message' => $message,
+                'data' => $data,
+                'action_url' => $actionUrl,
+                'is_read' => false,
+                'sent_at' => now(),
+            ]);
+        } catch (\Exception $e) {
+            // Don't fail enquiry if notification fails
+        }
+    }
+
     private function formatEnquiry($enquiry, bool $withMessages = false): array
     {
         $enquiry->loadMissing(['property', 'tenant', 'owner']);
-
         $data = [
             'id' => $enquiry->id,
             'property_id' => $enquiry->property_id,
@@ -271,7 +344,7 @@ class EnquiryController extends Controller
             'property_thumbnail' => $enquiry->property->images()->first()?->url ?? null,
             'tenant_id' => $enquiry->tenant_id,
             'tenant_name' => $enquiry->tenant->name ?? $enquiry->tenant_name ?? null,
-            'tenant_avatar' => $enquiry->tenant->phone ?? null, // simplified
+            'tenant_avatar' => $enquiry->tenant->phone ?? null,
             'owner_id' => $enquiry->owner_id,
             'owner_name' => $enquiry->owner->name ?? $enquiry->owner_name ?? null,
             'message' => $enquiry->message,
@@ -288,11 +361,9 @@ class EnquiryController extends Controller
                 'thumbnail' => $enquiry->property->images()->first()?->url,
             ] : null,
         ];
-
         if ($withMessages) {
             $data['messages'] = $enquiry->messages()->with('sender')->orderBy('created_at')->get()->map(fn($m) => $this->formatMessage($m));
         }
-
         return $data;
     }
 
