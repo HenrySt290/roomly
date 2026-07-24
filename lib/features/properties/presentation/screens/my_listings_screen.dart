@@ -11,7 +11,7 @@ import 'add_property_screen.dart';
 import 'property_detail_screen.dart';
 
 class MyListingsScreen extends StatefulWidget {
-  const MyListingsScreen({Key? key}) : super(key: key);
+  const MyListingsScreen({super.key});
 
   @override
   State<MyListingsScreen> createState() => _MyListingsScreenState();
@@ -45,7 +45,9 @@ class _MyListingsScreenState extends State<MyListingsScreen> {
                 MaterialPageRoute(builder: (_) => const AddPropertyScreen()),
               );
               if (result == true) {
-                context.read<PropertyNotifier>().loadOwnerProperties();
+                if (mounted) {
+                  context.read<PropertyNotifier>().loadOwnerProperties();
+                }
               }
             },
           ),
@@ -87,7 +89,7 @@ class _MyListingsScreenState extends State<MyListingsScreen> {
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        Icon(Icons.error_outline, size: 48, color: AppColors.error),
+                        const Icon(Icons.error_outline, size: 48, color: AppColors.error),
                         const SizedBox(height: 16),
                         Text(
                           'Failed to load listings',
@@ -108,7 +110,7 @@ class _MyListingsScreenState extends State<MyListingsScreen> {
                 // Apply filter
                 if (_filterStatus != 'all') {
                   properties = properties
-                      .where((p) => p.status == _filterStatus)
+                      .where((p) => p.status.value == _filterStatus)
                       .toList();
                 }
 
@@ -117,18 +119,18 @@ class _MyListingsScreenState extends State<MyListingsScreen> {
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        Icon(
+                        const Icon(
                           Icons.home_outlined,
                           size: 64,
-                          color: AppColors.textLight,
+                          color: AppColors.textHint,
                         ),
                         const SizedBox(height: 16),
                         Text(
                           _filterStatus == 'all'
                               ? 'No listings yet'
                               : 'No $_filterStatus listings',
-                          style: AppTextStyles.headingSmall.copyWith(
-                            color: AppColors.textDark,
+                          style: AppTextStyles.h4.copyWith(
+                            color: AppColors.textPrimary,
                           ),
                         ),
                         const SizedBox(height: 8),
@@ -137,7 +139,7 @@ class _MyListingsScreenState extends State<MyListingsScreen> {
                               ? 'Tap + to add your first property'
                               : 'Try a different filter',
                           style: AppTextStyles.bodyMedium.copyWith(
-                            color: AppColors.textLight,
+                            color: AppColors.textSecondary,
                           ),
                         ),
                         if (_filterStatus == 'all') ...[
@@ -191,7 +193,7 @@ class _MyListingsScreenState extends State<MyListingsScreen> {
       selectedColor: AppColors.primary,
       checkmarkColor: Colors.white,
       labelStyle: TextStyle(
-        color: isSelected ? Colors.white : AppColors.textDark,
+        color: isSelected ? Colors.white : AppColors.textPrimary,
         fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
       ),
       shape: RoundedRectangleBorder(
@@ -234,13 +236,13 @@ class _MyListingsScreenState extends State<MyListingsScreen> {
                             fit: BoxFit.cover,
                             errorBuilder: (_, __, ___) => Container(
                               color: AppColors.border,
-                              child: Icon(Icons.image_not_supported,
-                                  size: 48, color: AppColors.textLight),
+                              child: const Icon(Icons.image_not_supported,
+                                  size: 48, color: AppColors.textHint),
                             ),
                           )
                         : Container(
                             color: AppColors.border,
-                            child: Icon(Icons.home, size: 48, color: AppColors.textLight),
+                            child: const Icon(Icons.home, size: 48, color: AppColors.textHint),
                           ),
                   ),
                   Positioned(
@@ -260,8 +262,8 @@ class _MyListingsScreenState extends State<MyListingsScreen> {
                 children: [
                   Text(
                     property.title,
-                    style: AppTextStyles.headingSmall.copyWith(
-                      color: AppColors.textDark,
+                    style: AppTextStyles.h4.copyWith(
+                      color: AppColors.textPrimary,
                       fontWeight: FontWeight.w600,
                     ),
                     maxLines: 1,
@@ -270,7 +272,7 @@ class _MyListingsScreenState extends State<MyListingsScreen> {
                   const SizedBox(height: 4),
                   Text(
                     '${property.area}, ${property.city}',
-                    style: AppTextStyles.bodySmall.copyWith(color: AppColors.textLight),
+                    style: AppTextStyles.bodySmall.copyWith(color: AppColors.textSecondary),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                   ),
@@ -279,16 +281,16 @@ class _MyListingsScreenState extends State<MyListingsScreen> {
                     children: [
                       Text(
                         '\u20B9${property.rent.toStringAsFixed(0)}/month',
-                        style: AppTextStyles.headingSmall.copyWith(
+                        style: AppTextStyles.h4.copyWith(
                           color: AppColors.primary,
                           fontWeight: FontWeight.bold,
                         ),
                       ),
                       const SizedBox(width: 8),
-                      if (property.deposit > 0)
+                      if (property.securityDeposit > 0)
                         Text(
-                          '+ \u20B9${property.deposit.toStringAsFixed(0)} deposit',
-                          style: AppTextStyles.bodySmall.copyWith(color: AppColors.textLight),
+                          '+ \u20B9${property.securityDeposit.toStringAsFixed(0)} deposit',
+                          style: AppTextStyles.bodySmall.copyWith(color: AppColors.textSecondary),
                         ),
                     ],
                   ),
@@ -298,9 +300,9 @@ class _MyListingsScreenState extends State<MyListingsScreen> {
                     children: [
                       Row(
                         children: [
-                          _buildInfoChip(Icons.bed, '${property.roomType}'),
+                          _buildInfoChip(Icons.bed, property.roomType.value),
                           const SizedBox(width: 8),
-                          if (property.furnished)
+                          if (property.isFurnished)
                             _buildInfoChip(Icons.chair, 'Furnished'),
                         ],
                       ),
@@ -315,7 +317,7 @@ class _MyListingsScreenState extends State<MyListingsScreen> {
                               contentPadding: EdgeInsets.zero,
                             ),
                           ),
-                          if (property.status == 'published')
+                          if (property.status == PropertyStatus.published)
                             const PopupMenuItem(
                               value: 'occupy',
                               child: ListTile(
@@ -324,7 +326,7 @@ class _MyListingsScreenState extends State<MyListingsScreen> {
                                 contentPadding: EdgeInsets.zero,
                               ),
                             ),
-                          if (property.status == 'occupied')
+                          if (property.status == PropertyStatus.occupied)
                             const PopupMenuItem(
                               value: 'relist',
                               child: ListTile(
@@ -388,7 +390,9 @@ class _MyListingsScreenState extends State<MyListingsScreen> {
           ),
         ).then((result) {
           if (result == true) {
-            context.read<PropertyNotifier>().loadOwnerProperties();
+            if (mounted) {
+              context.read<PropertyNotifier>().loadOwnerProperties();
+            }
           }
         });
         break;
@@ -398,7 +402,9 @@ class _MyListingsScreenState extends State<MyListingsScreen> {
           'This will hide the listing until you relist it.',
           () async {
             await context.read<PropertyNotifier>().markOccupied(property.id);
-            context.read<PropertyNotifier>().loadOwnerProperties();
+            if (mounted) {
+              context.read<PropertyNotifier>().loadOwnerProperties();
+            }
           },
         );
         break;
@@ -408,7 +414,9 @@ class _MyListingsScreenState extends State<MyListingsScreen> {
           'A \u20B99 fee will be charged to relist this property.',
           () async {
             await context.read<PropertyNotifier>().relistProperty(property.id);
-            context.read<PropertyNotifier>().loadOwnerProperties();
+            if (mounted) {
+              context.read<PropertyNotifier>().loadOwnerProperties();
+            }
           },
         );
         break;
@@ -418,7 +426,9 @@ class _MyListingsScreenState extends State<MyListingsScreen> {
           'This action cannot be undone.',
           () async {
             await context.read<PropertyNotifier>().deleteProperty(property.id);
-            context.read<PropertyNotifier>().loadOwnerProperties();
+            if (mounted) {
+              context.read<PropertyNotifier>().loadOwnerProperties();
+            }
           },
           isDestructive: true,
         );

@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 
-import '../../../core/theme/app_colors.dart';
-import '../../../core/theme/app_text_styles.dart';
-import '../../../domain/entities/property_entity.dart';
+import '../../../../core/theme/app_colors.dart';
+import '../../../../core/theme/app_text_styles.dart';
+import '../../../../domain/entities/property_entity.dart';
 
 class PropertyCard extends StatelessWidget {
   final PropertyEntity property;
@@ -45,12 +45,12 @@ class PropertyCard extends StatelessWidget {
                             fit: BoxFit.cover,
                             errorBuilder: (_, __, ___) => Container(
                               color: AppColors.border,
-                              child: Icon(Icons.home, size: 48, color: AppColors.textLight),
+                              child: const Icon(Icons.home, size: 48, color: AppColors.textHint),
                             ),
                           )
                         : Container(
                             color: AppColors.border,
-                            child: Icon(Icons.home, size: 48, color: AppColors.textLight),
+                            child: const Icon(Icons.home, size: 48, color: AppColors.textHint),
                           ),
                   ),
                   
@@ -75,7 +75,7 @@ class PropertyCard extends StatelessWidget {
                         child: Icon(
                           isFavorite ? Icons.favorite : Icons.favorite_border,
                           size: 18,
-                          color: isFavorite ? AppColors.error : AppColors.textDark,
+                          color: isFavorite ? AppColors.error : AppColors.textPrimary,
                         ),
                       ),
                     ),
@@ -95,7 +95,7 @@ class PropertyCard extends StatelessWidget {
                         child: Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
-                            Icon(Icons.lock_open, size: 12, color: Colors.white),
+                            const Icon(Icons.lock_open, size: 12, color: Colors.white),
                             const SizedBox(width: 4),
                             Text(
                               'Unlock Details',
@@ -122,8 +122,8 @@ class PropertyCard extends StatelessWidget {
                   // Title & Rent
                   Text(
                     property.title,
-                    style: AppTextStyles.headingSmall.copyWith(
-                      color: AppColors.textDark,
+                    style: AppTextStyles.h4.copyWith(
+                      color: AppColors.textPrimary,
                       fontWeight: FontWeight.w600,
                     ),
                     maxLines: 1,
@@ -134,12 +134,12 @@ class PropertyCard extends StatelessWidget {
                   // Location
                   Row(
                     children: [
-                      Icon(Icons.location_on_outlined, size: 14, color: AppColors.textLight),
+                      const Icon(Icons.location_on_outlined, size: 14, color: AppColors.textSecondary),
                       const SizedBox(width: 4),
                       Expanded(
                         child: Text(
                           '${property.area}, ${property.city}',
-                          style: AppTextStyles.bodySmall.copyWith(color: AppColors.textLight),
+                          style: AppTextStyles.bodySmall.copyWith(color: AppColors.textSecondary),
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                         ),
@@ -153,16 +153,16 @@ class PropertyCard extends StatelessWidget {
                     children: [
                       Text(
                         '\u20B9${property.rent.toStringAsFixed(0)}',
-                        style: AppTextStyles.headingSmall.copyWith(
+                        style: AppTextStyles.h4.copyWith(
                           color: AppColors.primary,
                           fontWeight: FontWeight.bold,
                         ),
                       ),
                       Text(
                         '/month',
-                        style: AppTextStyles.bodySmall.copyWith(color: AppColors.textLight),
+                        style: AppTextStyles.bodySmall.copyWith(color: AppColors.textSecondary),
                       ),
-                      if (property.deposit > 0) ...[
+                      if (property.securityDeposit > 0) ...[
                         const SizedBox(width: 8),
                         Container(
                           padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
@@ -172,9 +172,9 @@ class PropertyCard extends StatelessWidget {
                             border: Border.all(color: AppColors.border),
                           ),
                           child: Text(
-                            '+\u20B9${property.deposit.toStringAsFixed(0)} dep',
+                            '+\u20B9${property.securityDeposit.toStringAsFixed(0)} dep',
                             style: AppTextStyles.bodySmall.copyWith(
-                              color: AppColors.textLight,
+                              color: AppColors.textSecondary,
                               fontSize: 10,
                             ),
                           ),
@@ -187,17 +187,17 @@ class PropertyCard extends StatelessWidget {
                   // Features
                   Row(
                     children: [
-                      _buildFeatureChip(Icons.bed, property.roomType),
+                      _buildFeatureChip(Icons.bed, property.roomType.value),
                       const SizedBox(width: 8),
-                      if (property.furnished) ...[
+                      if (property.isFurnished) ...[
                         _buildFeatureChip(Icons.chair, 'Furnished'),
                         const SizedBox(width: 8),
                       ],
-                      if (property.attachedBathroom) ...[
+                      if (property.hasAttachedBathroom) ...[
                         _buildFeatureChip(Icons.bathtub, 'Attached Bath'),
                         const SizedBox(width: 8),
                       ],
-                      if (property.parking) ...[
+                      if (property.hasParking) ...[
                         _buildFeatureChip(Icons.local_parking, 'Parking'),
                       ],
                     ],

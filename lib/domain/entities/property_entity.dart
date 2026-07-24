@@ -1,31 +1,66 @@
 import 'package:equatable/equatable.dart';
 
 enum PropertyType {
-  apartment,
-  house,
-  pg,
-  hostel,
-  villa,
-  studio,
-  other,
+  apartment('apartment'),
+  house('house'),
+  pg('pg'),
+  hostel('hostel'),
+  villa('villa'),
+  studio('studio'),
+  other('other');
+
+  final String value;
+  const PropertyType(this.value);
+
+  static PropertyType fromString(String value) {
+    return PropertyType.values.firstWhere(
+      (e) => e.value == value.toLowerCase(),
+      orElse: () => PropertyType.other,
+    );
+  }
 }
 
 enum RoomType {
-  single,
-  double,
-  shared,
-  dormitory,
+  single('single'),
+  double('double'),
+  shared('shared'),
+  dormitory('dormitory'),
+  r1rk('1rk'),
+  bhk1('1bhk'),
+  bhk2('2bhk'),
+  bhk3('3bhk'),
+  bhk4('4bhk');
+
+  final String value;
+  const RoomType(this.value);
+
+  static RoomType fromString(String value) {
+    return RoomType.values.firstWhere(
+      (e) => e.value == value.toLowerCase(),
+      orElse: () => RoomType.single,
+    );
+  }
 }
 
 enum PropertyStatus {
-  draft,
-  pendingPayment,
-  pendingApproval,
-  published,
-  occupied,
-  expired,
-  rejected,
-  hidden,
+  draft('draft'),
+  pendingPayment('pending_payment'),
+  pendingApproval('pending_approval'),
+  published('published'),
+  occupied('occupied'),
+  expired('expired'),
+  rejected('rejected'),
+  hidden('hidden');
+
+  final String value;
+  const PropertyStatus(this.value);
+
+  static PropertyStatus fromString(String value) {
+    return PropertyStatus.values.firstWhere(
+      (e) => e.value == value.toLowerCase(),
+      orElse: () => PropertyStatus.draft,
+    );
+  }
 }
 
 class PropertyEntity extends Equatable {
@@ -96,89 +131,6 @@ class PropertyEntity extends Equatable {
     this.publishedAt,
     this.occupiedAt,
   });
-
-  factory PropertyEntity.fromJson(Map<String, dynamic> json) {
-    return PropertyEntity(
-      id: json['id'] ?? 0,
-      title: json['title'] ?? '',
-      slug: json['slug'] ?? '',
-      description: json['description'] ?? '',
-      rent: (json['rent'] ?? 0).toDouble(),
-      securityDeposit: (json['security_deposit'] ?? 0).toDouble(),
-      propertyType: PropertyType.values.firstWhere(
-        (e) => e.name == json['property_type'],
-        orElse: () => PropertyType.other,
-      ),
-      roomType: RoomType.values.firstWhere(
-        (e) => e.name == json['room_type'],
-        orElse: () => RoomType.single,
-      ),
-      area: json['area'] ?? '',
-      city: json['city'] ?? '',
-      address: json['address'] ?? '',
-      latitude: (json['latitude'] ?? 0.0).toDouble(),
-      longitude: (json['longitude'] ?? 0.0).toDouble(),
-      ownerId: json['owner_id'] ?? 0,
-      ownerName: json['owner_name'],
-      images: json['images'] != null ? List<String>.from(json['images']) : [],
-      amenities: json['amenities'] != null ? List<String>.from(json['amenities']) : [],
-      rules: json['rules'] != null ? List<String>.from(json['rules']) : [],
-      availableFrom: DateTime.parse(json['available_from']),
-      status: PropertyStatus.values.firstWhere(
-        (e) => e.name == json['status'],
-        orElse: () => PropertyStatus.draft,
-      ),
-      isFurnished: json['is_furnished'] ?? false,
-      hasAttachedBathroom: json['has_attached_bathroom'] ?? false,
-      hasParking: json['has_parking'] ?? false,
-      hasWifi: json['has_wifi'] ?? false,
-      isPetFriendly: json['is_pet_friendly'] ?? false,
-      genderPreference: json['gender_preference'],
-      viewCount: json['view_count'] ?? 0,
-      favouriteCount: json['favourite_count'] ?? 0,
-      createdAt: DateTime.parse(json['created_at']),
-      updatedAt: json['updated_at'] != null ? DateTime.parse(json['updated_at']) : null,
-      publishedAt: json['published_at'] != null ? DateTime.parse(json['published_at']) : null,
-      occupiedAt: json['occupied_at'] != null ? DateTime.parse(json['occupied_at']) : null,
-    );
-  }
-
-  Map<String, dynamic> toJson() {
-    return {
-      'id': id,
-      'title': title,
-      'slug': slug,
-      'description': description,
-      'rent': rent,
-      'security_deposit': securityDeposit,
-      'property_type': propertyType.name,
-      'room_type': roomType.name,
-      'area': area,
-      'city': city,
-      'address': address,
-      'latitude': latitude,
-      'longitude': longitude,
-      'owner_id': ownerId,
-      'owner_name': ownerName,
-      'images': images,
-      'amenities': amenities,
-      'rules': rules,
-      'available_from': availableFrom.toIso8601String(),
-      'status': status.name,
-      'is_furnished': isFurnished,
-      'has_attached_bathroom': hasAttachedBathroom,
-      'has_parking': hasParking,
-      'has_wifi': hasWifi,
-      'is_pet_friendly': isPetFriendly,
-      'gender_preference': genderPreference,
-      'view_count': viewCount,
-      'favourite_count': favouriteCount,
-      'created_at': createdAt.toIso8601String(),
-      'updated_at': updatedAt?.toIso8601String(),
-      'published_at': publishedAt?.toIso8601String(),
-      'occupied_at': occupiedAt?.toIso8601String(),
-    };
-  }
 
   bool get isPublished => status == PropertyStatus.published;
   bool get isOccupied => status == PropertyStatus.occupied;

@@ -25,17 +25,39 @@ class _LoginScreenState extends State<LoginScreen> {
   bool _obscurePassword = true;
   bool _rememberMe = false;
 
+  late AuthNotifier _authNotifier;
+
+  @override
+  void initState() {
+    super.initState();
+    _authNotifier = context.read<AuthNotifier>();
+    _authNotifier.addListener(_onAuthStateChanged);
+  }
+
   @override
   void dispose() {
+    _authNotifier.removeListener(_onAuthStateChanged);
     _emailController.dispose();
     _passwordController.dispose();
     super.dispose();
   }
 
+  void _onAuthStateChanged() {
+    if (!mounted) return;
+    if (_authNotifier.state is AuthAuthenticated) {
+      Navigator.pushNamedAndRemoveUntil(context, '/home', (route) => false);
+    } else if (_authNotifier.state is AuthError) {
+      final message = (_authNotifier.state as AuthError).message;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(message), backgroundColor: AppColors.error),
+      );
+      _authNotifier.clearError();
+    }
+  }
+
   void _handleLogin() {
     if (_formKey.currentState!.validate()) {
-      final notifier = context.read<AuthNotifier>();
-      notifier.login(
+      _authNotifier.login(
         email: _emailController.text.trim(),
         password: _passwordController.text,
       );
@@ -57,14 +79,12 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   void _handleGoogleLogin() {
-    // TODO: Implement Google Sign-In
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(content: Text('Google login coming soon')),
     );
   }
 
   void _handleFacebookLogin() {
-    // TODO: Implement Facebook Sign-In
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(content: Text('Facebook login coming soon')),
     );

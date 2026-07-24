@@ -1,11 +1,11 @@
 import 'dart:io';
+import 'dart:convert';
 import 'package:image_picker/image_picker.dart';
 import 'package:flutter_image_compress/flutter_image_compress.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:http/http.dart' as http;
 import 'package:path/path.dart' as path;
 import '../config/api_config.dart';
-import '../network/api_client.dart';
 
 /// Image Upload Service
 /// Handles image picking, compression, and uploading to server
@@ -117,8 +117,7 @@ class ImageUploadService {
       final response = await http.Response.fromStream(streamedResponse);
 
       if (response.statusCode == 200 || response.statusCode == 201) {
-        final Map<String, dynamic> responseData = 
-            ApiClient.jsonDecode(response.body);
+        final Map<String, dynamic> responseData = jsonDecode(response.body);
         
         // Adjust based on your API response structure
         return responseData['url'] ?? 

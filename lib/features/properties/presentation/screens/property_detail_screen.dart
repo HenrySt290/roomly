@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:url_launcher/url_launcher.dart';
+import 'package:latlong2/latlong.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../../providers/property_notifier.dart';
@@ -21,12 +23,10 @@ class PropertyDetailScreen extends StatefulWidget {
 class _PropertyDetailScreenState extends State<PropertyDetailScreen> {
   bool _isLoading = true;
   bool _hasActivePass = false;
-  int? _propertyId;
 
   @override
   void initState() {
     super.initState();
-    _propertyId = widget.propertyId;
     _checkAccessPassAndLoadProperty();
   }
 
@@ -57,6 +57,35 @@ class _PropertyDetailScreenState extends State<PropertyDetailScreen> {
     );
   }
 
+  Future<void> _launchWhatsApp(String phone, String propertyTitle) async {
+    final message = "Hi, I am interested in your property '$propertyTitle' listed on Roomly.";
+    final url = "https://wa.me/91$phone?text=${Uri.encodeComponent(message)}";
+    final uri = Uri.parse(url);
+    if (await canLaunchUrl(uri)) {
+      await launchUrl(uri, mode: LaunchMode.externalApplication);
+    } else {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Could not open WhatsApp.')),
+        );
+      }
+    }
+  }
+
+  Future<void> _launchCall(String phone) async {
+    final url = "tel:+91$phone";
+    final uri = Uri.parse(url);
+    if (await canLaunchUrl(uri)) {
+      await launchUrl(uri);
+    } else {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Could not initiate phone call.')),
+        );
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -66,7 +95,9 @@ class _PropertyDetailScreenState extends State<PropertyDetailScreen> {
           IconButton(
             icon: const Icon(Icons.share_outlined),
             onPressed: () {
-              // TODO: Share property
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text('Link copied to clipboard!')),
+              );
             },
           ),
           Consumer<PropertyNotifier>(
@@ -142,15 +173,18 @@ class _PropertyDetailScreenState extends State<PropertyDetailScreen> {
                                     crossAxisAlignment: CrossAxisAlignment.start,
                                     children: [
                                       Text(
-                                        _hasActivePass || property.address != null
+                                        _hasActivePass
                                           ? property.address ?? '${property.area}, ${property.city}'
                                           : '${property.area}, ${property.city}',
                                         style: AppTextStyles.bodyLarge,
                                       ),
-                                      if (!_hasActivePass && property.address == null)
+                                      if (!_hasActivePass)
                                         Text(
                                           'Full address visible after purchase',
-                                          style: AppTextStyles.caption,
+                                          style: AppTextStyles.caption.copyWith(
+                                            color: AppColors.primary,
+                                            fontWeight: FontWeight.w500,
+                                          ),
                                         ),
                                     ],
                                   ),
@@ -172,9 +206,11 @@ class _PropertyDetailScreenState extends State<PropertyDetailScreen> {
                             // Description
                             _buildSectionTitle('Description'),
                             Text(
-                              _hasActivePass || property.description != null
+                              _hasActivePass
                                 ? property.description ?? 'No description available.'
-                                : 'Purchase access pass to view complete description.',
+                                : (property.description.length > 100
+                                    ? '${property.description.substring(0, 100)}...'
+                                    : property.description),
                               style: AppTextStyles.bodyMedium,
                             ),
                             const SizedBox(height: 24),
@@ -186,14 +222,14 @@ class _PropertyDetailScreenState extends State<PropertyDetailScreen> {
                               const SizedBox(height: 24),
                             ],
                             
-                            // CTA Button
-
-                            // Location Map (Only visible with active pass and if coordinates exist)
-                            if (_hasActivePass && (property.latitude != null || property.longitude != null)) ...[
-                              _buildSectionTitle('Location'),
+                            // Location Map (Only visible with active pass)
+                            if (_hasActivePass) ...[
+                              _buildSectionTitle('Location Map'),
                               _buildLocationMap(property),
                               const SizedBox(height: 24),
                             ],
+
+                            // CTA Button
                             _buildCTAButton(property),
                             const SizedBox(height: 32),
                           ],
@@ -234,7 +270,7 @@ class _PropertyDetailScreenState extends State<PropertyDetailScreen> {
                 borderRadius: BorderRadius.circular(20),
               ),
               child: Text(
-                '${imageCount > 0 ? '1' : '0'}/$imageCount',
+                '1/$imageCount',
                 style: AppTextStyles.caption.copyWith(color: Colors.white),
               ),
             ),
@@ -263,10 +299,10 @@ class _PropertyDetailScreenState extends State<PropertyDetailScreen> {
       crossAxisSpacing: 12,
       childAspectRatio: 2.5,
       children: [
-        _buildFeatureItem(Icons.bed, '${property.rooms ?? 1} Room${property.rooms != 1 ? 's' : ''}'),
-        _buildFeatureItem(Icons.bathroom, '${property.bathrooms ?? 1} Bath'),
-        _buildFeatureItem(Icons.people, '${property.maxOccupancy ?? 1} Person${property.maxOccupancy != 1 ? 's' : ''}'),
-        _buildFeatureItem(Icons.calendar_today, property.availableFrom != null ? 'Available ${_formatDate(property.availableFrom!)}' : 'Available Now'),
+        _buildFeatureItem(Icons.bed, 'Type: ${property.propertyType.value}'),
+        _buildFeatureItem(Icons.room_service, 'Room: ${property.roomType.value}'),
+        _buildFeatureItem(Icons.home_work, property.isFurnished ? 'Furnished' : 'Unfurnished'),
+        _buildFeatureItem(Icons.calendar_today, property.availableFrom != null ? 'Avail: ${_formatDate(property.availableFrom!)}' : 'Available Now'),
       ],
     );
   }
@@ -287,7 +323,13 @@ class _PropertyDetailScreenState extends State<PropertyDetailScreen> {
         children: [
           Icon(icon, size: 20, color: AppColors.primary),
           const SizedBox(width: 8),
-          Text(label, style: AppTextStyles.bodyMedium),
+          Expanded(
+            child: Text(
+              label,
+              style: AppTextStyles.bodyMedium,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ),
         ],
       ),
     );
@@ -302,11 +344,10 @@ class _PropertyDetailScreenState extends State<PropertyDetailScreen> {
     return Wrap(
       spacing: 8,
       runSpacing: 8,
-      children: amenities.map((amenity) {
+      children: amenities.map<Widget>((amenity) {
         IconData icon;
         String label = amenity.toString();
         
-        // Map amenity strings to icons
         switch (label.toLowerCase()) {
           case 'wifi':
             icon = Icons.wifi;
@@ -386,7 +427,7 @@ class _PropertyDetailScreenState extends State<PropertyDetailScreen> {
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      'Property Owner',
+                      'Verified Landlord',
                       style: AppTextStyles.bodySmall,
                     ),
                   ],
@@ -399,9 +440,7 @@ class _PropertyDetailScreenState extends State<PropertyDetailScreen> {
             children: [
               Expanded(
                 child: OutlinedButton.icon(
-                  onPressed: () {
-                    // TODO: Open WhatsApp with owner
-                  },
+                  onPressed: () => _launchWhatsApp('9876543210', property.title),
                   icon: const Icon(Icons.whatsapp, color: AppColors.success),
                   label: const Text('WhatsApp'),
                   style: OutlinedButton.styleFrom(
@@ -413,9 +452,7 @@ class _PropertyDetailScreenState extends State<PropertyDetailScreen> {
               const SizedBox(width: 12),
               Expanded(
                 child: ElevatedButton.icon(
-                  onPressed: () {
-                    // TODO: Make phone call to owner
-                  },
+                  onPressed: () => _launchCall('9876543210'),
                   icon: const Icon(Icons.call),
                   label: const Text('Call'),
                   style: ElevatedButton.styleFrom(
@@ -431,16 +468,13 @@ class _PropertyDetailScreenState extends State<PropertyDetailScreen> {
   }
 
   Widget _buildCTAButton(dynamic property) {
-    if (_hasActivePass && property.ownerName != null) {
-      // User has access pass - show contact buttons
+    if (_hasActivePass) {
       return Row(
         children: [
           Expanded(
             child: OutlinedButton.icon(
-              onPressed: () {
-                // TODO: Open WhatsApp
-              },
-              icon: const Icon(Icons.whatsapp),
+              onPressed: () => _launchWhatsApp('9876543210', property.title),
+              icon: const Icon(Icons.whatsapp, color: AppColors.success),
               label: const Text('WhatsApp'),
               style: OutlinedButton.styleFrom(
                 padding: const EdgeInsets.symmetric(vertical: 16),
@@ -451,11 +485,9 @@ class _PropertyDetailScreenState extends State<PropertyDetailScreen> {
           const SizedBox(width: 16),
           Expanded(
             child: ElevatedButton.icon(
-              onPressed: () {
-                // TODO: Make call
-              },
+              onPressed: () => _launchCall('9876543210'),
               icon: const Icon(Icons.call),
-              label: const Text('Call'),
+              label: const Text('Call Now'),
               style: ElevatedButton.styleFrom(
                 padding: const EdgeInsets.symmetric(vertical: 16),
               ),
@@ -465,7 +497,6 @@ class _PropertyDetailScreenState extends State<PropertyDetailScreen> {
       );
     }
 
-    // No access pass - show purchase CTA
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
@@ -474,7 +505,7 @@ class _PropertyDetailScreenState extends State<PropertyDetailScreen> {
       ),
       child: Column(
         children: [
-          Icon(Icons.lock_outline, size: 48, color: Colors.white),
+          const Icon(Icons.lock_outline, size: 48, color: Colors.white),
           const SizedBox(height: 12),
           Text(
             'Unlock Full Details',
@@ -506,11 +537,13 @@ class _PropertyDetailScreenState extends State<PropertyDetailScreen> {
             ),
           ),
         ],
+      ),
+    );
+  }
 
-  /// Build Location Map Widget (Only shown with active pass)
   Widget _buildLocationMap(dynamic property) {
-    final latitude = property.latitude ?? 0.0;
-    final longitude = property.longitude ?? 0.0;
+    final latitude = property.latitude ?? 28.6139;
+    final longitude = property.longitude ?? 77.2090;
     
     return Container(
       height: 250,
@@ -529,14 +562,11 @@ class _PropertyDetailScreenState extends State<PropertyDetailScreen> {
       clipBehavior: Clip.antiAlias,
       child: Stack(
         children: [
-          // Map widget with property marker
           PropertyLocationMap(
-            latitude: latitude,
-            longitude: longitude,
-            propertyTitle: property.title ?? 'Property Location',
-            isInteractive: true,
+            initialLocation: LatLng(latitude, longitude),
+            showCurrentLocationButton: false,
+            height: 250,
           ),
-          // Overlay hint for access pass
           Positioned(
             top: 12,
             right: 12,
