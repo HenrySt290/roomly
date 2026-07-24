@@ -39,15 +39,24 @@ class _MyListingsScreenState extends State<MyListingsScreen> {
         actions: [
           IconButton(
             icon: const Icon(Icons.add),
+            tooltip: 'New listing flow',
+            onPressed: () async {
+              final result = await Navigator.pushNamed(context, '/add-property-flow');
+              if (result == true && mounted) {
+                context.read<PropertyNotifier>().loadOwnerProperties();
+              }
+            },
+          ),
+          IconButton(
+            icon: const Icon(Icons.edit_note),
+            tooltip: 'Legacy quick add',
             onPressed: () async {
               final result = await Navigator.push<bool>(
                 context,
                 MaterialPageRoute(builder: (_) => const AddPropertyScreen()),
               );
-              if (result == true) {
-                if (mounted) {
-                  context.read<PropertyNotifier>().loadOwnerProperties();
-                }
+              if (result == true && mounted) {
+                context.read<PropertyNotifier>().loadOwnerProperties();
               }
             },
           ),
@@ -80,11 +89,11 @@ class _MyListingsScreenState extends State<MyListingsScreen> {
           Expanded(
             child: Consumer<PropertyNotifier>(
               builder: (context, notifier, _) {
-                if (notifier.ownerPropertiesState.isLoading) {
+                if (notifier.isLoading) {
                   return const Center(child: CircularProgressIndicator());
                 }
 
-                if (notifier.ownerPropertiesState.hasError) {
+                if (notifier.error != null) {
                   return Center(
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
@@ -146,18 +155,27 @@ class _MyListingsScreenState extends State<MyListingsScreen> {
                           const SizedBox(height: 24),
                           ElevatedButton.icon(
                             onPressed: () async {
-                              final result = await Navigator.push<bool>(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (_) => const AddPropertyScreen(),
-                                ),
-                              );
+                              final result = await Navigator.pushNamed(context, '/add-property-flow');
                               if (result == true) {
                                 notifier.loadOwnerProperties();
                               }
                             },
                             icon: const Icon(Icons.add),
-                            label: const Text('Add Property'),
+                            label: const Text('Add Property (New Flow)'),
+                          ),
+                          const SizedBox(height: 12),
+                          OutlinedButton.icon(
+                            onPressed: () async {
+                              final result = await Navigator.push<bool>(
+                                context,
+                                MaterialPageRoute(builder: (_) => const AddPropertyScreen()),
+                              );
+                              if (result == true) {
+                                notifier.loadOwnerProperties();
+                              }
+                            },
+                            icon: const Icon(Icons.edit),
+                            label: const Text('Legacy Quick Add'),
                           ),
                         ],
                       ],

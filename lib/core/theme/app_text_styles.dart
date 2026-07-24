@@ -108,4 +108,18 @@ class AppTextStyles {
     height: 1.4,
     decoration: TextDecoration.none,
   );
+
+  // Compatibility aliases for legacy screens
+  static TextStyle get headingSmall => h4;
+  static TextStyle get labelLarge => GoogleFonts.poppins(
+        fontSize: 14,
+        fontWeight: FontWeight.w600,
+        color: AppColors.textPrimary,
+      );
+  static TextStyle get labelSmall => GoogleFonts.poppins(
+        fontSize: 11,
+        fontWeight: FontWeight.w500,
+        color: AppColors.textSecondary,
+      );
+  static TextStyle get bodySmallMedium => bodySmall;
 }

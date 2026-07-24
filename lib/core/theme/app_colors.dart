@@ -38,6 +38,10 @@ class AppColors {
   static const Color border = Color(0xFFE9ECEF);
   static const Color divider = Color(0xFFDEE2E6);
   
+  // Legacy aliases
+  static const Color textLight = textHint;
+  static const Color textDark = textPrimary;
+
   // Shadow
   static const Color shadow = Color(0x1A000000);
   

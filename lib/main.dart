@@ -19,6 +19,8 @@ import 'package:roomly/features/notifications/presentation/screens/notifications
 import 'package:roomly/features/notifications/providers/notification_notifier.dart';
 import 'package:roomly/features/properties/presentation/screens/my_listings_screen.dart';
 import 'package:roomly/features/properties/presentation/screens/add_property_screen.dart';
+import 'package:roomly/features/properties/presentation/screens/add_property_flow_screen.dart';
+import 'package:roomly/features/properties/providers/add_property_flow_notifier.dart';
 import 'package:roomly/features/location/providers/location_notifier.dart';
 import 'package:roomly/features/location/data/repositories/location_repository_impl.dart';
 import 'package:roomly/features/location/presentation/screens/location_picker_screen.dart';
@@ -78,6 +80,13 @@ void main() async {
             repository: context.read<LocationRepositoryImpl>(),
           )..checkPermission(),
         ),
+        // Multi-step Add Property Flow Provider (clean-arch: depends on Property + Payment repositories)
+        ChangeNotifierProvider<AddPropertyFlowNotifier>(
+          create: (context) => AddPropertyFlowNotifier(
+            propertyRepository: context.read<PropertyRepositoryImpl>(),
+            paymentRepository: context.read<PaymentRepositoryImpl>(),
+          ),
+        ),
       ],
       child: const RoomlyApp(),
     ),
@@ -105,6 +114,7 @@ class RoomlyApp extends StatelessWidget {
         '/notifications': (context) => const NotificationsScreen(),
         '/my-listings': (context) => const MyListingsScreen(),
         '/add-property': (context) => const AddPropertyScreen(),
+        '/add-property-flow': (context) => const AddPropertyFlowScreen(),
         '/pick-location': (context) => const LocationPickerScreen(),
       },
       builder: (context, child) {

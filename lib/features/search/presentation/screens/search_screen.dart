@@ -228,10 +228,10 @@ class _SearchScreenState extends State<SearchScreen> {
   Widget _buildPropertyList() {
     return Consumer<PropertyNotifier>(
       builder: (context, notifier, _) {
-        if (notifier.propertiesState.isLoading) {
+        if (notifier.isLoading) {
           return const Center(child: CircularProgressIndicator());
         }
-        if (notifier.propertiesState.hasError) {
+        if (notifier.error != null) {
           return Center(
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
